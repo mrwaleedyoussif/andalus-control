@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://accounts.google.com/gsi/client; style-src 'self' https://fonts.googleapis.com https://accounts.google.com/gsi/style; font-src https://fonts.gstatic.com; img-src 'self' data: https://*.googleusercontent.com; connect-src 'self' https://script.google.com https://script.googleusercontent.com https://accounts.google.com/gsi/; frame-src https://accounts.google.com/gsi/; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#23245F">
+<title>مسار الإنجاز | مدارس الأندلس بالطائف</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=El+Messiri:wght@600;700&family=Readex+Pro:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<div id="app" class="app" dir="rtl" lang="ar">
+  <aside class="rail" id="rail" aria-label="Navigation"></aside>
+  <div class="content">
+    <header class="top gut" id="top"></header>
+    <div class="banner gut" id="previewBar" hidden><div id="previewIn"></div></div>
+    <main class="gut" id="main" tabindex="-1"><div class="gate"><div class="spin" role="status" aria-label="Loading"></div><p id="loadingText"></p></div></main>
+  </div>
+  <nav class="tabbar" id="tabbar" aria-label="Navigation"></nav>
+  <div id="sheetHost"></div>
+  <div class="toasts" id="toasts" aria-live="polite"></div>
+</div>
+<script src="guard.js"></script>
+<script src="config.js"></script>
+<script src="https://accounts.google.com/gsi/client" async></script>
+<script src="app.js"></script>
+</body>
+</html>
