@@ -1,5 +1,1 @@
-// Fill in these two values once, then upload the whole folder to your web host.
-window.AP_CONFIG = {
-  api: '',        // the Apps Script web app link, ending with /exec
-  clientId: ''    // the Google sign-in client ID, ending with .apps.googleusercontent.com
-};
+window.AP_CONFIG = { api: 'https://script.google.com/macros/s/AKfycbx3XhBeCMvdPij1tg7Bu__-3kC3_dju9BNuwamjHR_KSUq2yGRTa0P9z_G0gQQmdl7yuw/exec', clientId: '347264026473-vo46p2nnrp73567dhr74th0hpa1s190u.apps.googleusercontent.com' };
