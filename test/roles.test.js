@@ -132,4 +132,27 @@ throws(() => as('named-teacher@school.test', () => G('api_review')(subB.id, 'app
 ok(JSON.parse(as('named-teacher@school.test', () => G('api_bootstrap')())).me.leads.length === 0, 'a teacher gets no indicators to lead');
 ok(JSON.parse(U(() => G('api_review')(subB.id, 'approved', ''))).submission.status === 'approved', 'a supervisor still reviews any indicator in their stage');
 
+// ---- Control rules the admins may switch on: evidence for a completed report, and no deciding one's own report ----
+const report = (who, key, extra) => JSON.parse(as(who, () => G('api_submit')(JSON.stringify(Object.assign({ type: 'report', programKey: key }, extra || {})))));
+const settingsNow = () => JSON.parse(G('api_bootstrap')()).settings;
+ok(settingsNow().needEvidence === false && settingsNow().noSelfReview === false, 'both rules are off until an admin switches them on');
+const bare = report('teacher@school.test', other11[2].key);
+ok(bare.status === 'pending', 'with the rule off, a completed report needs no evidence, as before');
+const ownOff = report('vp@school.test', mine19[2].key, { note: 'done by me' });
+ok(JSON.parse(V(() => G('api_review')(ownOff.id, 'approved', ''))).submission.status === 'approved', 'with the rule off, a leader may decide their own report, as before');
+throws(() => T(() => G('api_saveSettings')(JSON.stringify({ needEvidence: true }))), 'FORBIDDEN', 'only an admin switches the rules');
+G('api_saveSettings')(JSON.stringify({ needEvidence: true, noSelfReview: true }));
+ok(settingsNow().needEvidence === true && settingsNow().noSelfReview === true, 'the page is told both rules are on');
+throws(() => report('teacher@school.test', far19[0].key.replace(/./g, 'x')), 'GONE', 'an unknown programme is still refused first');
+throws(() => report('teacher@school.test', other11[0].key), 'INPUT', 'with the rule on, a completed report without evidence or a note is refused');
+ok(report('teacher@school.test', other11[0].key, { note: 'held on Sunday, 28 pupils' }).status === 'pending', 'a note is enough');
+ok(report('vp@school.test', mine19[0].key, { evidence: 'https://drive.google.com/file/d/abc/view' }).status === 'pending', 'an evidence link is enough');
+ok(report('teacher@school.test', inEPI[5].key, { outcome: 'postponed' }).status === 'pending', 'a postponed report needs neither');
+const ownOn = JSON.parse(V(() => G('api_bootstrap')())).submissions.filter(x => x.by === 'vp@school.test' && x.status === 'pending')[0];
+throws(() => V(() => G('api_review')(ownOn.id, 'approved', '')), 'FORBIDDEN', 'with the rule on, a leader cannot approve their own report');
+throws(() => V(() => G('api_review')(ownOn.id, 'returned', 'x')), 'FORBIDDEN', 'nor return it');
+ok(JSON.parse(U(() => G('api_review')(ownOn.id, 'approved', ''))).submission.status === 'approved', 'another leader of the stage approves it');
+G('api_saveSettings')(JSON.stringify({ needEvidence: false, noSelfReview: false }));
+ok(settingsNow().needEvidence === false && settingsNow().noSelfReview === false, 'an admin can switch both rules off again');
+
 console.log(`${pass} passed, ${failN} failed`); process.exit(failN ? 1 : 0);

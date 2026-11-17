@@ -783,7 +783,7 @@ a.btn{text-decoration:none}
       mainFile: 'رابط ملف المنصة الشاملة', mainFileHint: 'الصق رابط Google Sheets للملف الرئيسي. يُحفظ المعرّف فقط.', connected: 'الملف مربوط', notConnected: 'لم يُربط ملف بعد',
       t1: 'بداية الفصل الأول', t2: 'بداية الفصل الثاني', scope: 'المراحل التي تغطيها المنصة', wb: 'السماح بالكتابة في المنصة الشاملة (بيانات التنفيذ فقط)', syncEvery: 'المزامنة كل', hours: 'ساعات',
       saveSettings: 'حفظ الإعدادات', settingsSaved: 'حُفظت الإعدادات.', time: 'الوقت', action: 'الإجراء', targetCol: 'الهدف', lastSync: 'آخر مزامنة', never: 'لم تتم', syncNow: 'مزامنة', syncing: 'جارٍ المزامنة…', synced: 'تمت المزامنة.',
-      r_owner: 'مالك النظام', r_principal: 'مدير المدرسة', r_avp: 'وكيل الشؤون التعليمية', r_vp: 'وكيل المدرسة', r_teacher: 'معلم', r_supervisor: 'مشرف مرحلة', r_indicator: 'مسؤول مؤشر', r_follower: 'متابع (عرض فقط)', followerNote: 'حسابك للمتابعة فقط: تطّلع على البرامج والتقدم دون رفع تقارير أو تعديل.',
+      r_owner: 'مالك النظام', r_principal: 'مدير المدرسة', r_avp: 'وكيل الشؤون التعليمية', r_vp: 'وكيل المدرسة', r_teacher: 'معلم', needEvidenceL: 'تقرير «تم التنفيذ» يحتاج شاهداً أو ملاحظة', noSelfReviewL: 'لا يبتّ المرسل في تقريره: يراجعه قائد آخر', r_supervisor: 'مشرف مرحلة', r_indicator: 'مسؤول مؤشر', r_follower: 'متابع (عرض فقط)', followerNote: 'حسابك للمتابعة فقط: تطّلع على البرامج والتقدم دون رفع تقارير أو تعديل.',
       setupNeeded: 'لم يُربط ملف المنصة الشاملة بعد. يضيف مالك النظام الرابط من الإدارة ثم الإعدادات.', denied: 'لا يمكن فتح المنصة', close: 'إغلاق', cancel: 'إلغاء', lang: 'English', theme: 'المظهر',
       signIn: 'تسجيل الدخول', signInLead: 'ادخل بحساب Google الخاص بالمدرسة. لا توجد كلمات مرور.', signOut: 'خروج', signedOut: 'انتهت الجلسة. سجّل الدخول من جديد.', sar: 'ر.س', days: 'يوم',
       alerts: 'التنبيهات', school: 'المدرسة', allSchools: 'كل المدارس', sPrivate: 'مدارس الأندلس الأهلية', sIntl: 'مدارس الأندلس العالمية', sPrivateSub: 'Alandalus Private Schools', sIntlSub: 'Andalus International Schools',
@@ -834,7 +834,7 @@ a.btn{text-decoration:none}
       mainFile: 'Link to the main file', mainFileHint: 'Paste the Google Sheets link of the main file. Only its ID is stored.', connected: 'File connected', notConnected: 'No file connected yet',
       t1: 'Term 1 starts', t2: 'Term 2 starts', scope: 'Stages the platform covers', wb: 'Allow writing to the main file (execution data only)', syncEvery: 'Sync every', hours: 'hours',
       saveSettings: 'Save settings', settingsSaved: 'Settings saved.', time: 'Time', action: 'Action', targetCol: 'Target', lastSync: 'Last sync', never: 'never', syncNow: 'Sync', syncing: 'Syncing…', synced: 'Sync complete.',
-      r_owner: 'System owner', r_principal: 'Principal', r_avp: 'Academic Vice Principal', r_vp: 'Vice Principal', r_teacher: 'Teacher', r_supervisor: 'Stage supervisor', r_indicator: 'Indicator owner', r_follower: 'Follower (view only)', followerNote: 'Your account is view-only: you can follow programmes and progress, but not report or edit.',
+      r_owner: 'System owner', r_principal: 'Principal', r_avp: 'Academic Vice Principal', r_vp: 'Vice Principal', r_teacher: 'Teacher', needEvidenceL: 'A “done” report needs evidence or a note', noSelfReviewL: 'Nobody decides their own report: another leader reviews it', r_supervisor: 'Stage supervisor', r_indicator: 'Indicator owner', r_follower: 'Follower (view only)', followerNote: 'Your account is view-only: you can follow programmes and progress, but not report or edit.',
       setupNeeded: 'The main file is not connected yet. The system owner adds its link under Admin, then Settings.', denied: 'The platform cannot be opened', close: 'Close', cancel: 'Cancel', lang: 'العربية', theme: 'Theme',
       signIn: 'Sign in', signInLead: 'Use your school Google account. There are no passwords.', signOut: 'Sign out', signedOut: 'Your session ended. Sign in again.', sar: 'SAR', days: 'd',
       alerts: 'Notifications', school: 'School', allSchools: 'All schools', sPrivate: 'Alandalus Private Schools', sIntl: 'Andalus International Schools',
@@ -4183,7 +4183,7 @@ var APSolver = (function () {
     } else if (S.adminTab === 'settings') {
       var st = S.settings, mf = h('input', { type: 'url', dir: 'ltr', placeholder: 'https://docs.google.com/spreadsheets/d/…' });
       var t1 = h('input', { type: 'date', value: st.termStarts[1] || '' }), t2 = h('input', { type: 'date', value: st.termStarts[2] || '' });
-      var wb = h('input', { type: 'checkbox', checked: st.writeBack }), pe = h('input', { type: 'checkbox', id: 'planEdit', checked: st.planEdit }), hrs = h('select');
+      var wb = h('input', { type: 'checkbox', checked: st.writeBack }), pe = h('input', { type: 'checkbox', id: 'planEdit', checked: st.planEdit }), ne = h('input', { type: 'checkbox', id: 'needEvidence', checked: !!st.needEvidence }), ns = h('input', { type: 'checkbox', id: 'noSelfReview', checked: !!st.noSelfReview }), hrs = h('select');
       var wOn = h('input', { type: 'checkbox', id: 'weeklyOn', checked: st.weekly !== false }), wDay = h('select', { id: 'weeklyDay' });
       [0, 1, 2, 3, 4, 5, 6].forEach(function (n) { var o = h('option', { value: n, text: fmt({ weekday: 'long', timeZone: 'UTC' }, new Date(Date.UTC(2026, 10, 15 + n))) }); if (n === (st.weeklyDay || 0)) o.selected = true; wDay.appendChild(o); });
       var nOn = h('input', { type: 'checkbox', checked: st.notify !== false }), nTime = h('input', { type: 'time', id: 'notifyTime', value: st.notifyTime || '07:30', required: true });
@@ -4205,7 +4205,7 @@ var APSolver = (function () {
       var sb = h('button', { class: 'btn', type: 'submit' }, t('saveSettings'));
       v.appendChild(h('form', { class: 'panel form', id: 'settingsForm', onsubmit: function (e) {
         e.preventDefault();
-        var d = { t1: t1.value, t2: t2.value, scope: Array.prototype.map.call(boxes.querySelectorAll('input:checked'), function (i) { return i.value; }), writeBack: wb.checked, planEdit: pe.checked, syncHours: +hrs.value,
+        var d = { t1: t1.value, t2: t2.value, scope: Array.prototype.map.call(boxes.querySelectorAll('input:checked'), function (i) { return i.value; }), writeBack: wb.checked, planEdit: pe.checked, needEvidence: ne.checked, noSelfReview: ns.checked, syncHours: +hrs.value,
           notify: nOn.checked, notifyTime: nTime.value, weekly: wOn.checked, weeklyDay: +wDay.value, siteUrl: site.value.trim(), slogan: slo.value.trim(), welcome: wel.value.trim() };
         if (mf.value.trim()) d.mainFile = mf.value.trim();
         d.links = Array.prototype.map.call(linkRows.children, function (r) { return r.read(); }).filter(function (l) { return l.name || l.url; });
@@ -4215,7 +4215,7 @@ var APSolver = (function () {
       } },
         h('p', { class: 'note' + (st.mainFileSet ? '' : ' warn'), text: st.mainFileSet ? t('connected') + (S.fileName ? ': ' + S.fileName : '') : t('notConnected') }),
         field(t('mainFile'), mf, t('mainFileHint')), h('div', { class: 'row2' }, field(t('t1'), t1), field(t('t2'), t2), field(t('syncEvery'), hrs)),
-        h('div', { class: 'fld' }, h('span', { text: t('scope') }), boxes), h('label', { class: 'check' }, wb, t('wb')), h('label', { class: 'check' }, pe, t('planEditL')), h('p', { class: 'note', text: t('planEditHint') }),
+        h('div', { class: 'fld' }, h('span', { text: t('scope') }), boxes), h('label', { class: 'check' }, wb, t('wb')), h('label', { class: 'check' }, pe, t('planEditL')), h('p', { class: 'note', text: t('planEditHint') }), h('label', { class: 'check' }, ne, t('needEvidenceL')), h('label', { class: 'check' }, ns, t('noSelfReviewL')),
         h('h3', { text: t('startPage') }), field(t('sloganL'), slo), field(t('welcomeL'), wel),
         h('h3', { text: t('alerts') }), h('label', { class: 'check' }, nOn, t('notifyOn')),
         h('div', { class: 'row2' }, field(t('notifyTime'), nTime, t('notifyTimeHint')), field(t('siteUrl'), site)),

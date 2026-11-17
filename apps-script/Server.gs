@@ -720,7 +720,7 @@ function linksFor_(u) {
 function publicSettings_() {
   return {
     termStarts: { 1: prop_('T1_START'), 2: prop_('T2_START') }, lastSync: prop_('LAST_SYNC'), lastSyncError: prop_('LAST_SYNC_ERROR'),
-    writeBack: prop_('WRITEBACK') === 'on', planEdit: prop_('PLAN_EDIT') === 'on', mainFileSet: !!prop_('MAIN_FILE_ID'), scope: scope_(), syncHours: +prop_('SYNC_HOURS') || 1, domain: prop_('DOMAIN'),
+    writeBack: prop_('WRITEBACK') === 'on', planEdit: prop_('PLAN_EDIT') === 'on', needEvidence: prop_('EVIDENCE_RULE') === 'on', noSelfReview: prop_('REVIEW_RULE') === 'on', mainFileSet: !!prop_('MAIN_FILE_ID'), scope: scope_(), syncHours: +prop_('SYNC_HOURS') || 1, domain: prop_('DOMAIN'),
     slogan: prop_('SLOGAN') || DEFAULT_SLOGAN, welcome: prop_('WELCOME'),
     weekly: prop_('WEEKLY') !== 'off', weeklyDay: weeklyDay_(), lastWeekly: prop_('WEEKLY_LAST'),
     notify: prop_('NOTIFY') !== 'off', notifyTime: notifyTime_().text, siteUrl: prop_('SITE_URL'), whatsappAuto: waReady_(), lastNotify: prop_('NOTIFY_LAST')
@@ -778,6 +778,7 @@ function api_submit(json) {
   needStage_(u, rec.stage);
   rec.outcome = ['done', 'partial', 'postponed'].indexOf(d.outcome) !== -1 ? d.outcome : 'done';
   rec.execDate = date_(d.execDate); rec.actual = number_(d.actual); rec.evidence = url_(d.evidence); rec.note = text_(d.note, 1000);
+  if (prop_('EVIDENCE_RULE') === 'on' && type === 'report' && rec.outcome === 'done' && !rec.evidence && !rec.note) throw fail_('INPUT', 'أرفق شاهداً أو اكتب ملاحظة عمّا نُفّذ قبل إرسال تقرير «تم التنفيذ».');
   var lock = LockService.getScriptLock();
   lock.waitLock(15000);
   try {
@@ -809,6 +810,7 @@ function api_review(id, decision, note) {
     var s = readTable_(SH.SUBS, SUB_COLS).filter(function (x) { return x.id === id; })[0];
     if (!s) throw fail_('GONE', 'التقرير غير موجود');
     needLeads_(u, s.stage, s.kpi);
+    if (prop_('REVIEW_RULE') === 'on' && String(s.by).toLowerCase() === u.email) throw fail_('FORBIDDEN', 'لا يبتّ المرسل في تقريره. يراجعه قائد آخر.');
     if (s.status !== 'pending') throw fail_('STATE', 'سبق البت في هذا التقرير');
     return decide_(s, decision, note, u);
   } finally { lock.releaseLock(); }
@@ -928,6 +930,9 @@ function api_saveSettings(json) {
   }
   if ('writeBack' in d) p.setProperty('WRITEBACK', d.writeBack ? 'on' : 'off');
   if ('planEdit' in d) p.setProperty('PLAN_EDIT', d.planEdit ? 'on' : 'off');
+  // Two control rules the admins may switch on. Both are off until they do, so nothing changes for a school that has not chosen them.
+  if ('needEvidence' in d) p.setProperty('EVIDENCE_RULE', d.needEvidence ? 'on' : 'off');
+  if ('noSelfReview' in d) p.setProperty('REVIEW_RULE', d.noSelfReview ? 'on' : 'off');
   if ('slogan' in d) p.setProperty('SLOGAN', text_(d.slogan, 160));
   if ('welcome' in d) p.setProperty('WELCOME', text_(d.welcome, 300));
   if ('notify' in d) p.setProperty('NOTIFY', d.notify ? 'on' : 'off');
