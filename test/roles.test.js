@@ -155,4 +155,13 @@ ok(JSON.parse(U(() => G('api_review')(ownOn.id, 'approved', ''))).submission.sta
 G('api_saveSettings')(JSON.stringify({ needEvidence: false, noSelfReview: false }));
 ok(settingsNow().needEvidence === false && settingsNow().noSelfReview === false, 'an admin can switch both rules off again');
 
+// ---- Backup: the owner downloads everything the platform keeps ----
+[V, U, T, F].forEach((who, i) => throws(() => who(() => G('api_backup')()), 'FORBIDDEN', 'only the owner takes a backup (' + ['vice principal', 'supervisor', 'teacher', 'follower'][i] + ')'));
+const bk = JSON.parse(G('api_backup')());
+ok(bk.by === 'owner@school.test' && !!bk.madeAt, 'a backup says who made it and when');
+ok(bk.sheets.Users.length >= 8 && bk.sheets.Users[0].indexOf('email') !== -1, 'a backup holds the staff list with its header row');
+ok(bk.sheets.Submissions.length > 1 && bk.sheets.Assignments.length > 1 && bk.sheets.Audit.length > 1, 'a backup holds reports, assignments and the activity log');
+ok(!('Snapshot' in bk.sheets) && !('Photos' in bk.sheets), 'a backup leaves out the copy of the main file and the pictures');
+ok(JSON.parse(G('api_audit')(5)).some(a => a.action === 'backup'), 'taking a backup is written to the activity log');
+
 console.log(`${pass} passed, ${failN} failed`); process.exit(failN ? 1 : 0);

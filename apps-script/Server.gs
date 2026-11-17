@@ -70,7 +70,7 @@ function route_(body) {
   if (fn === 'logout') { endSession_(String(body.session || '')); return ''; }
   var routes = {
     api_bootstrap: api_bootstrap, api_submit: api_submit, api_review: api_review, api_updateExecution: api_updateExecution, api_sync: api_sync,
-    api_undoExecution: api_undoExecution, api_users: api_users, api_saveUser: api_saveUser, api_saveSettings: api_saveSettings, api_audit: api_audit,
+    api_undoExecution: api_undoExecution, api_users: api_users, api_saveUser: api_saveUser, api_saveSettings: api_saveSettings, api_audit: api_audit, api_backup: api_backup,
     api_notifications: api_notifications, api_sendMyNotification: api_sendMyNotification, api_savePhoto: api_savePhoto, api_withdraw: api_withdraw, api_reopen: api_reopen,
     api_assign: api_assign, api_undoAssign: api_undoAssign, api_uploadEvidence: api_uploadEvidence, api_weekly: api_weekly, api_sendMyWeekly: api_sendMyWeekly, api_planOptions: api_planOptions, api_planRequest: api_planRequest,
     api_timetable: api_timetable, api_saveLesson: api_saveLesson, api_deleteLesson: api_deleteLesson, api_importLessons: api_importLessons, api_undoImport: api_undoImport, api_clearClass: api_clearClass, api_savePeriods: api_savePeriods,
@@ -964,6 +964,26 @@ function api_saveSettings(json) {
   if (d.syncHours && [1, 2, 4, 6, 12].indexOf(+d.syncHours) !== -1) { p.setProperty('SYNC_HOURS', String(+d.syncHours)); installTrigger_(+d.syncHours); }
   audit_(u, 'settings', fileName, { t1: d.t1, t2: d.t2, scope: d.scope, writeBack: d.writeBack, notify: d.notify, notifyTime: d.notifyTime, syncHours: d.syncHours, mainFileChanged: !!d.mainFile, links: 'links' in d ? (d.links || []).length : undefined });
   return JSON.stringify({ settings: publicSettings_(), fileName: fileName, links: linksFor_(u) });
+}
+
+/**
+ * Everything the platform itself keeps, as one JSON text the owner saves as a file: staff, reports, assignments, history,
+ * calendars, timetable, planner, visits and the activity log. The snapshot of the main file is left out (a sync rebuilds it),
+ * and so are pictures and sent-notification marks. Owner only: it holds every person's data.
+ */
+var BACKUP_SHEETS = ['USERS', 'SUBS', 'ASSIGN', 'HISTORY', 'TASKS', 'SESSIONS', 'TIMETABLE', 'PLANNER', 'VISITS', 'AUDIT'];
+function api_backup() {
+  var u = me_();
+  if (u.role !== 'owner') throw fail_('FORBIDDEN', 'النسخة الاحتياطية لمالك النظام فقط.');
+  rate_(u, 'backup', 6, 3600);
+  var ss = SpreadsheetApp.getActive(), out = { app: AP.APP_NAME, madeAt: nowIso_(), by: u.email, sheets: {} };
+  BACKUP_SHEETS.forEach(function (k) {
+    var sh = ss.getSheetByName(SH[k]);
+    if (!sh || sh.getLastRow() === 0) { out.sheets[SH[k]] = []; return; }
+    out.sheets[SH[k]] = sh.getRange(1, 1, sh.getLastRow(), Math.max(sh.getLastColumn(), 1)).getValues().map(function (row) { return row.map(cellOut_); });
+  });
+  audit_(u, 'backup', '', { rows: Object.keys(out.sheets).reduce(function (n, k) { return n + out.sheets[k].length; }, 0) });
+  return JSON.stringify(out);
 }
 
 function api_audit(limit) {
