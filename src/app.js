@@ -12,7 +12,7 @@
       nothingLate: 'لا توجد برامج متأخرة.', byStage: 'حسب المرحلة', stage: 'المرحلة', indicator: 'المؤشر', status: 'الحالة', term: 'الفصل', search: 'بحث', searchPh: 'ابحث عن برنامج أو مسؤول',
       all: 'الكل', term1: 'الفصل الأول', term2: 'الفصل الثاني', mineOnly: 'برامجي فقط', hasPending: 'له تقرير ينتظر', program: 'البرنامج', when: 'الموعد', assignee: 'المكلف',
       actual: 'الفعلي', target: 'المستهدف', results: 'نتيجة', more2: 'عرض المزيد', none: 'لا توجد نتائج مطابقة.', copy: 'نسخ القائمة', copied: 'نُسخت القائمة. الصقها في Excel.',
-      week: 'الأسبوع', noDate: 'بلا تاريخ', plan: 'الخطة', execution: 'بيانات التنفيذ', details: 'التفاصيل', item: 'البند', method: 'الوسيلة', place: 'المكان', budget: 'الميزانية', count: 'العدد المستهدف',
+      week: 'الأسبوع', noDate: 'بلا تاريخ', plan: 'الخطة', execution: 'بيانات التنفيذ', details: 'التفاصيل', tgtGroup: 'الفئة المستهدفة', planLink: 'رابط البرنامج', kpiOwnerL: 'مسؤول المؤشر', item: 'البند', method: 'الوسيلة', place: 'المكان', budget: 'الميزانية', count: 'العدد المستهدف',
       source: 'الموضع في المنصة الشاملة', rowWord: 'صف', approvedPlan: 'اعتماد الخطة', yes: 'نعم', no: 'لا', techNotes: 'ملاحظات الجهة الفنية', evidence: 'الشاهد', open: 'فتح الرابط', comment: 'تعليق مدير المرحلة',
       doneQ: 'حالة الإتمام', notDone: 'لم يُعلَّم مكتملاً', report: 'رفع تقرير', reportLead: 'يصل تقريرك إلى قيادة المرحلة للمراجعة قبل تسجيله في المنصة الشاملة.',
       outcome: 'ما الذي تم؟', oDone: 'نُفّذ كاملاً', oPartial: 'نُفّذ جزئياً', oPostponed: 'تأجّل', execDate: 'تاريخ التنفيذ', actualN: 'العدد الفعلي', evidenceUrl: 'رابط الشاهد', evidenceHint: 'ارفع صورة أو PDF، أو الصق رابطاً يبدأ بـ https://', uploadBtn: 'رفع صورة أو PDF', uploading: 'جارٍ رفع الشاهد…', uploaded: 'تم رفع الشاهد:', uploadBad: 'اختر صورة، أو ملف PDF أصغر من 5 ميجابايت.',
@@ -63,7 +63,7 @@
       nothingLate: 'No overdue programmes.', byStage: 'By stage', stage: 'Stage', indicator: 'Indicator', status: 'Status', term: 'Term', search: 'Search', searchPh: 'Search a programme or person',
       all: 'All', term1: 'Term 1', term2: 'Term 2', mineOnly: 'My programmes only', hasPending: 'Report waiting', program: 'Programme', when: 'When', assignee: 'Assigned to',
       actual: 'Actual', target: 'Target', results: 'results', more2: 'Show more', none: 'Nothing matches.', copy: 'Copy list', copied: 'List copied. Paste it into Excel.',
-      week: 'Week', noDate: 'No date', plan: 'Plan', execution: 'Execution data', details: 'Details', item: 'Item', method: 'Method', place: 'Place', budget: 'Budget', count: 'Target number',
+      week: 'Week', noDate: 'No date', plan: 'Plan', execution: 'Execution data', details: 'Details', tgtGroup: 'Target group', planLink: 'Programme link', kpiOwnerL: 'Indicator owner', item: 'Item', method: 'Method', place: 'Place', budget: 'Budget', count: 'Target number',
       source: 'Location in the main file', rowWord: 'row', approvedPlan: 'Plan approved', yes: 'Yes', no: 'No', techNotes: 'Technical reviewer notes', evidence: 'Evidence', open: 'Open link', comment: "Stage principal's comment",
       doneQ: 'Completion', notDone: 'Not marked done', report: 'Report', reportLead: 'Your report goes to the stage leaders for review before it is recorded in the main file.',
       outcome: 'What happened?', oDone: 'Done in full', oPartial: 'Partly done', oPostponed: 'Postponed', execDate: 'Date carried out', actualN: 'Actual number', evidenceUrl: 'Evidence link', evidenceHint: 'Upload a photo or PDF, or paste a link that starts with https://', uploadBtn: 'Upload a photo or PDF', uploading: 'Uploading the evidence…', uploaded: 'Evidence uploaded:', uploadBad: 'Choose a photo, or a PDF smaller than 5 MB.',
@@ -771,7 +771,19 @@
     x.focus();
     return sheet;
   }
-  function evidenceNode(v) {
+  /** A link shown by its text: the address is the text itself, or the one found behind it in the main file. */
+  function cellLink(text, url) {
+    var u = /^https:\/\//i.test(text || '') ? text : /^https:\/\//i.test(url || '') ? url : '';
+    if (!u) return text || null;
+    return h('a', { href: u, target: '_blank', rel: 'noopener noreferrer', text: u === text ? t('open') : text });
+  }
+  /** The indicator's owner for the programme's stage, as the main file names him. */
+  function kpiOwner(p) {
+    var tg = S.targets.filter(function (x) { return x.code === p.kpi; })[0];
+    return tg && tg.stages[p.stage] ? tg.stages[p.stage].owner || '' : '';
+  }
+  function evidenceNode(v, url) {
+    if (v && url) return cellLink(v, url);
     if (!v) return '—';
     return /^https:\/\//i.test(v) ? h('a', { href: v, target: '_blank', rel: 'noopener noreferrer', text: t('open') }) : v;
   }
@@ -802,10 +814,10 @@
         p.execClosed ? h('span', { class: 'tag lock', 'data-lock': 'exec', text: t('tagExecClosed') }) : null),
       h('section', { class: 'box' }, h('h3', { text: t('plan') }), kv([
         [t('indicator'), kpiName(p.kpi, p.kpiName)], [t('when'), whenText(p)], [t('inFile'), p.assignee || '—'], [t('count'), p.count], [t('budget'), p.budget ? p.budget + ' ' + t('sar') + (p.budgetLine ? ' · ' + p.budgetLine : '') : null],
-        [t('item'), p.item], [t('method'), p.method], [t('place'), p.place], [t('details'), p.details], [t('approvedPlan'), p.approved ? t('yes') : t('no')], [t('techNotes'), p.techNotes],
+        [t('item'), p.item], [t('method'), p.method], [t('place'), p.place], [t('details'), p.details], [t('tgtGroup'), p.group], [t('planLink'), cellLink(p.link, p.linkUrl)], [t('kpiOwnerL'), kpiOwner(p)], [t('approvedPlan'), p.approved ? t('yes') : t('no')], [t('techNotes'), p.techNotes],
         [t('source'), h('span', null, p.sheet + ' · ' + t('rowWord') + ' ', h('span', { class: 'ltr', text: p.row }))]])),
       h('section', { class: 'box' }, h('h3', { text: t('execution') }), kv([
-        [t('doneQ'), p.done ? t('done') : t('notDone')], [t('actualN'), p.actual != null ? p.actual : '—'], [t('evidence'), evidenceNode(p.evidence)], [t('comment'), p.comment || '—']])),
+        [t('doneQ'), p.done ? t('done') : t('notDone')], [t('actualN'), p.actual != null ? p.actual : '—'], [t('evidence'), evidenceNode(p.evidence, p.evidenceUrl)], [t('comment'), p.comment || '—']])),
       whoBox(p), act, planBox(p), hist);
   }
 
@@ -1000,7 +1012,7 @@
   }
   function editForm(p) {
     var eDone = h('input', { type: 'checkbox', checked: !!p.done }), eAct = h('input', { type: 'number', min: '0', inputmode: 'numeric', value: p.actual != null ? p.actual : '' });
-    var eEv = h('input', { type: 'url', dir: 'ltr', placeholder: 'https://', value: /^https:\/\//i.test(p.evidence || '') ? p.evidence : '' }), eCom = h('textarea', { value: p.comment || '' });
+    var eEv = h('input', { type: 'url', dir: 'ltr', placeholder: 'https://', value: /^https:\/\//i.test(p.evidence || '') ? p.evidence : (p.evidenceUrl || '') }), eCom = h('textarea', { value: p.comment || '' });
     // Only the fields this programme's table really has in the main file are offered.
     var c = p.c || {}, canComment = (S.me.role === 'owner' || S.me.role === 'principal') && !!c.comment;
     var lacks = ['done', 'actual', 'evidence'].filter(function (k) { return !c[k]; }).map(function (k) { return t('col_' + k); });
