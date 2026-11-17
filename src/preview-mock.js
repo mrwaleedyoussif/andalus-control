@@ -9,6 +9,7 @@
     { email: 'teacher@preview.example', name: 'معلم (معاينة)', role: 'teacher', stages: INTL, active: true, aliases: ['وليد يوسف'], phone: '966500000004', channel: 'both' },
     { email: 'owner@preview.example', name: 'مالك النظام (معاينة)', role: 'owner', stages: ['*'], active: true, aliases: [], phone: '', channel: 'email' }
   ];
+  var devItems = [];
   var cur = 0, audit = [], subs = [], photos = {}, tasks = [], sessions = [], undos = {}, assign = {}, lessons = [];
   var links = [{ name: 'منصة التطور المهني', url: 'https://andalus-idp.online/', who: 'admins' }];
   function linksFor(u) { var lead = LEAD.indexOf(u.role) !== -1; return links.filter(function (l) { return lead || l.who === 'all'; }).map(function (l) { return lead ? l : { name: l.name, url: l.url }; }); }
@@ -683,6 +684,29 @@
       log('review-undone', s.title, { id: id });
       return JSON.stringify({ submission: s, program: program });
     },
+    // Professional development, kept in memory for the preview. The rules mirror the server's: admins follow the staff of their stages.
+    api_devList: function () {
+      var u = me(), adm = LEAD.indexOf(u.role) !== -1, st = stages(u), inScope = function (x) { return stages(x).some(function (s) { return st.indexOf(s) !== -1; }); };
+      if (!adm) return JSON.stringify({ admin: false, items: devItems.filter(function (r) { return r.email === u.email; }) });
+      var ok = users.filter(inScope);
+      return JSON.stringify({ admin: true, items: devItems.filter(function (r) { return ok.some(function (x) { return x.email === r.email; }); }), people: ok.map(function (x) { return { email: x.email, name: x.name }; }) });
+    },
+    api_saveDev: function (json) {
+      needLead();
+      var d = JSON.parse(json), who = users.filter(function (x) { return x.email === d.email; })[0];
+      if (!who) throw fail('INPUT', 'اختر موظفاً من مراحلك.');
+      if (!String(d.title || '').trim()) throw fail('INPUT', 'اكتب عنوان البند.');
+      var rec = { id: 'dev' + (devItems.length + 1) + '-' + Date.now(), email: who.email, name: who.name, kind: d.kind || 'other', title: String(d.title).trim(), status: d.status || 'todo', due: d.due || '', note: d.note || '', source: 'manual' };
+      devItems.push(rec);
+      return JSON.stringify(rec);
+    },
+    api_setDevStatus: function (id, status) {
+      var r = devItems.filter(function (x) { return x.id === id; })[0];
+      if (!r) throw fail('GONE', 'البند غير موجود.');
+      r.status = status;
+      return JSON.stringify(r);
+    },
+    api_deleteDev: function (id) { needLead(); devItems = devItems.filter(function (x) { return x.id !== id; }); return ''; },
     api_myCalendar: function () { return JSON.stringify({ tasks: LEAD.indexOf(me().role) !== -1 ? own(tasks).map(bare) : [], sessions: own(sessions).map(bare) }); },
     api_saveTask: function (json) {
       if (LEAD.indexOf(me().role) === -1) throw fail('FORBIDDEN', 'هذا الإجراء لمديري النظام فقط.');

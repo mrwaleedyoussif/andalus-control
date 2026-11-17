@@ -35,11 +35,11 @@
   function vsReset() { S.vs = null; S.vsUi = { tab: 'log', term: '', who: '', kind: '', form: null, open: null }; }
   vsReset();
   function vsReady(v) {
-    if (S.vs && (!isLead() || S.users)) return true;
+    if (S.vs && (!isAdmin() || S.users)) return true;
     v.appendChild(h('div', { class: 'spin' }));
     if (vsLoading) return false;
     vsLoading = true;
-    Promise.all([S.vs ? null : call('api_visits').then(function (r) { S.vs = JSON.parse(r); }), isLead() && !S.users ? call('api_users').then(function (r) { S.users = JSON.parse(r); }) : null])
+    Promise.all([S.vs ? null : call('api_visits').then(function (r) { S.vs = JSON.parse(r); }), isAdmin() && !S.users ? call('api_users').then(function (r) { S.users = JSON.parse(r); }) : null])
       .then(function () { vsLoading = false; if (S.view === 'visits') paintMain(); }, function (e) { vsLoading = false; toast(errText(e), true); });
     return false;
   }
@@ -172,7 +172,7 @@
 
   /* ---- one visit, as a report that can be printed ---- */
   function visitDetail(v) {
-    var ui = S.vsUi, x = ui.open, lead = isLead(), form = x.form, n = form.scale.length, back = function () { ui.open = null; render(); };
+    var ui = S.vsUi, x = ui.open, lead = isAdmin(), form = x.form, n = form.scale.length, back = function () { ui.open = null; render(); };
     var del = lead && (x.mine || S.me.role === 'owner') ? sureBtn('vdDelete', t('vsDelete'), t('vsDeleteSure'), function () {
       call('api_deleteVisit', x.id).then(function (r) {
         var ref = { undoId: JSON.parse(r).undoId };
@@ -240,7 +240,7 @@
   function visitRows(list, withTeacher) {
     var tb = h('tbody');
     list.slice().sort(function (a, b) { return a.date < b.date ? 1 : a.date > b.date ? -1 : 0; }).forEach(function (x) {
-      var open = function () { openVisit(x.id); }, lead = isLead();
+      var open = function () { openVisit(x.id); }, lead = isAdmin();
       tb.appendChild(h('tr', { class: 'click', tabindex: '0', 'data-visit': x.id, onclick: open, onkeydown: function (e) { if (e.key === 'Enter') open(); } }, h('td', { class: 'num', text: fmtDate(x.date) }), withTeacher ? h('td', null, h('span', { class: 'nm', text: x.teacherName })) : null,
         h('td', { text: [x.klass, x.subject].filter(Boolean).join(' · ') || '—' }), h('td', { text: t('vk_' + x.kind) }), h('td', { text: x.byName }), h('td', null, pctPill(x.score)),
         h('td', null, lead ? (!x.shared ? pill('undated', t('vsHidden')) : x.seen ? pill('done', t('vsSeen')) : pill('soon', t('vsNotSeen'))) : (x.seen ? pill('done', t('vsSeen')) : pill('soon', t('vsNewTag'))))));
@@ -300,7 +300,7 @@
     v.appendChild(h('div', { class: 'tw' }, h('table', { id: 'vsEval' }, h('thead', null, h('tr', null, h('th', { text: t('vsTeacher') }), h('th', { text: t('vsCount') }), h('th', { text: t('vsLast') }), h('th', { text: t('vsAvg') }), VKINDS.map(function (k) { return h('th', { text: t('vk_' + k) }); }))), tb)));
   }
   function vVisits() {
-    var v = h('div', { class: 'view visits' }), ui = S.vsUi, lead = isLead();
+    var v = h('div', { class: 'view visits' }), ui = S.vsUi, lead = isAdmin();
     if (!vsReady(v)) return v;
     if (ui.open) { visitDetail(v); return v; }
     if (lead && ui.form) { visitForm(v); return v; }

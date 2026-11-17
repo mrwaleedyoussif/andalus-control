@@ -4,10 +4,15 @@
  * Every function a page can call starts with api_ and checks the caller first. Nothing trusts the page.
  * The website reaches these through doPost with a session; a page served by doGet reaches them through google.script.run.
  */
-var SH = { USERS: 'Users', SUBS: 'Submissions', AUDIT: 'Audit', SNAP: 'Snapshot', NOTES: 'Notifications', PHOTOS: 'Photos', TASKS: 'Tasks', SESSIONS: 'Sessions', ASSIGN: 'Assignments', HISTORY: 'History', TIMETABLE: 'Timetable', PLANNER: 'Planner', VISITS: 'Visits' };
-var ROLES = ['owner', 'principal', 'avp', 'vp', 'teacher'];
+var SH = { USERS: 'Users', SUBS: 'Submissions', AUDIT: 'Audit', SNAP: 'Snapshot', NOTES: 'Notifications', PHOTOS: 'Photos', TASKS: 'Tasks', SESSIONS: 'Sessions', ASSIGN: 'Assignments', HISTORY: 'History', TIMETABLE: 'Timetable', PLANNER: 'Planner', VISITS: 'Visits', DEV: 'Development' };
+// A follower can see their stages but cannot report, propose, upload or be given a programme.
+// A supervisor leads their stages (reviews, edits execution data, adds to the plan, syncs) without being a system admin.
+// An indicator owner leads only the indicators the main file names them for (مسؤول المؤشر), inside their stages.
+var ROLES = ['owner', 'principal', 'avp', 'vp', 'supervisor', 'indicator', 'teacher', 'follower'];
 // The Principal, the Academic Vice Principal and the Vice Principal are the system admins. The owner is the technical owner.
-var LEADERS = ['owner', 'principal', 'avp', 'vp'];
+var LEADERS = ['owner', 'principal', 'avp', 'vp', 'supervisor'];
+// System admins are named apart from stage leaders, so a level that leads a stage without running the system can be added to LEADERS alone.
+var ADMINS = ['owner', 'principal', 'avp', 'vp'];
 var USER_COLS = ['email', 'name', 'role', 'stages', 'active', 'aliases', 'phone', 'channel', 'major', 'position'];
 var CHANNELS = ['email', 'whatsapp', 'both', 'off'];
 var NOTE_COLS = ['date', 'time', 'email', 'name', 'channel', 'items', 'status'];
@@ -65,7 +70,8 @@ function route_(body) {
   if (fn === 'logout') { endSession_(String(body.session || '')); return ''; }
   var routes = {
     api_bootstrap: api_bootstrap, api_submit: api_submit, api_review: api_review, api_updateExecution: api_updateExecution, api_sync: api_sync,
-    api_undoExecution: api_undoExecution, api_users: api_users, api_saveUser: api_saveUser, api_saveSettings: api_saveSettings, api_audit: api_audit,
+    api_undoExecution: api_undoExecution, api_users: api_users, api_saveUser: api_saveUser, api_saveSettings: api_saveSettings, api_audit: api_audit, api_backup: api_backup,
+    api_devList: api_devList, api_saveDev: api_saveDev, api_deleteDev: api_deleteDev, api_setDevStatus: api_setDevStatus, api_importDev: api_importDev,
     api_notifications: api_notifications, api_sendMyNotification: api_sendMyNotification, api_savePhoto: api_savePhoto, api_withdraw: api_withdraw, api_reopen: api_reopen,
     api_assign: api_assign, api_undoAssign: api_undoAssign, api_uploadEvidence: api_uploadEvidence, api_weekly: api_weekly, api_sendMyWeekly: api_sendMyWeekly, api_planOptions: api_planOptions, api_planRequest: api_planRequest,
     api_timetable: api_timetable, api_saveLesson: api_saveLesson, api_deleteLesson: api_deleteLesson, api_importLessons: api_importLessons, api_undoImport: api_undoImport, api_clearClass: api_clearClass, api_savePeriods: api_savePeriods,
@@ -157,6 +163,7 @@ function setup() {
   ensureSheet_(ss, SH.TIMETABLE, LESSON_COLS);
   ensureSheet_(ss, SH.PLANNER, PLANNER_COLS);
   ensureSheet_(ss, SH.VISITS, VISIT_COLS);
+  ensureSheet_(ss, SH.DEV, DEV_COLS);
   var evidence = 'ready';
   try { evidenceRoot_(); } catch (e) { evidence = 'not ready'; }   // also makes Google ask for permission to keep evidence files
   var p = PropertiesService.getScriptProperties();
@@ -304,7 +311,10 @@ function me_() {
 function isLeader_(u) { return LEADERS.indexOf(u.role) !== -1; }
 function needLeader_(u) { if (!isLeader_(u)) throw fail_('FORBIDDEN', 'هذا الإجراء لقيادة المرحلة فقط.'); }
 /** System admins: the Principal, the Academic Vice Principal, the Vice Principal, and the technical owner. */
-function needAdmin_(u) { if (!isLeader_(u)) throw fail_('FORBIDDEN', 'هذا الإجراء لمديري النظام فقط.'); }
+function isAdmin_(u) { return ADMINS.indexOf(u.role) !== -1; }
+function needAdmin_(u) { if (!isAdmin_(u)) throw fail_('FORBIDDEN', 'هذا الإجراء لمديري النظام فقط.'); }
+/** Refuses every change from a view-only account. */
+function needWrite_(u) { if (u.role === 'follower') throw fail_('FORBIDDEN', 'حسابك للمتابعة فقط، ولا يملك صلاحية الإضافة أو التعديل.'); }
 
 function scope_() {
   try { var s = JSON.parse(prop_('STAGES') || '[]'); return s.length ? s : DEFAULT_STAGES; } catch (e) { return DEFAULT_STAGES; }
@@ -319,6 +329,25 @@ function stagesOf_(u) {
 
 function needStage_(u, stage) {
   if (stagesOf_(u).indexOf(stage) === -1) throw fail_('FORBIDDEN', 'هذه المرحلة خارج صلاحيتك.');
+}
+/** The indicators this person answers for, as "code|stage": those the main file names them for as مسؤول المؤشر, in their own stages. */
+function ownedIndicators_(u) {
+  var snap = readSnapshot_(), stages = stagesOf_(u), names = {}, out = [];
+  (snap.targets || []).forEach(function (t) { Object.keys(t.stages || {}).forEach(function (s) { if (t.stages[s].owner) names[t.code + '|' + s] = t.stages[s].owner; }); });
+  (snap.indicators || []).forEach(function (b) { if (b.owner) names[b.kpi + '|' + b.stage] = b.owner; });
+  Object.keys(names).forEach(function (k) { if (stages.indexOf(k.slice(k.indexOf('|') + 1)) !== -1 && AP.namedIn(names[k], [u]).length) out.push(k); });
+  return out;
+}
+/** Leaders, and indicator owners: the levels that may review and edit execution data somewhere. Where exactly is needLeads_. */
+function needMayLead_(u) { if (!isLeader_(u) && u.role !== 'indicator') throw fail_('FORBIDDEN', 'هذا الإجراء لقيادة المرحلة ومسؤولي المؤشرات فقط.'); }
+/** True for a leader in that stage, and for the indicator owner of that indicator in that stage. */
+function leadsIndicator_(u, stage, kpi) {
+  if (stagesOf_(u).indexOf(stage) === -1) return false;
+  return isLeader_(u) || (u.role === 'indicator' && ownedIndicators_(u).indexOf(kpi + '|' + stage) !== -1);
+}
+function needLeads_(u, stage, kpi) {
+  if (isLeader_(u)) return needStage_(u, stage);
+  if (!leadsIndicator_(u, stage, kpi)) throw fail_('FORBIDDEN', 'هذا المؤشر خارج صلاحيتك.');
 }
 
 /* ---------- snapshot of the main file ---------- */
@@ -551,7 +580,7 @@ function withTasks_(recs) {
     .forEach(function (t) { if (t.notify) (byOwner[t.owner] = byOwner[t.owner] || []).push(t); });
   Object.keys(byOwner).forEach(function (email) {
     var u = map[email];
-    if (!u || !u.active || u.channel === 'off' || !isLeader_(u)) return;
+    if (!u || !u.active || u.channel === 'off' || !isAdmin_(u)) return;
     var due = AP.tasksOn(byOwner[email], today);
     if (!due.length) return;
     var rec = recs.filter(function (r) { return r.email === email; })[0];
@@ -684,7 +713,7 @@ function links_() {
 }
 /** The buttons this person gets. A teacher never receives a link meant for the admins. */
 function linksFor_(u) {
-  var lead = isLeader_(u);
+  var lead = isAdmin_(u);
   return links_().filter(function (l) { return lead || l.who === 'all'; }).map(function (l) { return lead ? { name: l.name, url: l.url, who: l.who === 'all' ? 'all' : 'admins' } : { name: l.name, url: l.url }; });
 }
 
@@ -693,7 +722,7 @@ function linksFor_(u) {
 function publicSettings_() {
   return {
     termStarts: { 1: prop_('T1_START'), 2: prop_('T2_START') }, lastSync: prop_('LAST_SYNC'), lastSyncError: prop_('LAST_SYNC_ERROR'),
-    writeBack: prop_('WRITEBACK') === 'on', planEdit: prop_('PLAN_EDIT') === 'on', mainFileSet: !!prop_('MAIN_FILE_ID'), scope: scope_(), syncHours: +prop_('SYNC_HOURS') || 1, domain: prop_('DOMAIN'),
+    writeBack: prop_('WRITEBACK') === 'on', planEdit: prop_('PLAN_EDIT') === 'on', needEvidence: prop_('EVIDENCE_RULE') === 'on', noSelfReview: prop_('REVIEW_RULE') === 'on', mainFileSet: !!prop_('MAIN_FILE_ID'), scope: scope_(), syncHours: +prop_('SYNC_HOURS') || 1, domain: prop_('DOMAIN'),
     slogan: prop_('SLOGAN') || DEFAULT_SLOGAN, welcome: prop_('WELCOME'),
     weekly: prop_('WEEKLY') !== 'off', weeklyDay: weeklyDay_(), lastWeekly: prop_('WEEKLY_LAST'),
     notify: prop_('NOTIFY') !== 'off', notifyTime: notifyTime_().text, siteUrl: prop_('SITE_URL'), whatsappAuto: waReady_(), lastNotify: prop_('NOTIFY_LAST')
@@ -701,9 +730,9 @@ function publicSettings_() {
 }
 
 function subsFor_(u) {
-  var stages = stagesOf_(u), lead = isLeader_(u);
+  var stages = stagesOf_(u), lead = isLeader_(u), own = u.role === 'indicator' ? ownedIndicators_(u) : [];
   return readTable_(SH.SUBS, SUB_COLS).filter(function (s) {
-    return lead ? stages.indexOf(s.stage) !== -1 : String(s.by).toLowerCase() === u.email;
+    return lead ? stages.indexOf(s.stage) !== -1 : String(s.by).toLowerCase() === u.email || own.indexOf(s.kpi + '|' + s.stage) !== -1;
   }).map(subOut_);
 }
 /** A report as the page receives it: without the server's own undo record, and with the number as a number. */
@@ -719,7 +748,7 @@ function api_bootstrap() {
   var u = me_(), stages = stagesOf_(u), snap = readSnapshot_();
   var inStage = function (x) { return stages.indexOf(x.stage) !== -1; };
   return JSON.stringify({
-    me: { email: u.email, name: u.name, role: u.role, stages: stages, aliases: u.aliases, photo: photos_()[u.email] || '' },
+    me: { email: u.email, name: u.name, role: u.role, stages: stages, aliases: u.aliases, photo: photos_()[u.email] || '', leads: u.role === 'indicator' ? ownedIndicators_(u) : [] },
     settings: publicSettings_(), today: today_(), fileName: snap.fileName || '',
     programs: snap.programs.filter(inStage), indicators: snap.indicators.filter(inStage),
     targets: snap.targets.map(function (t) {
@@ -735,6 +764,7 @@ function api_bootstrap() {
 /** A member of staff reports work on a programme, or adds work on an indicator. It waits for a leader's review. */
 function api_submit(json) {
   var u = me_();
+  needWrite_(u);
   rate_(u, 'submit', 30, 300);
   var d = JSON.parse(json), type = d.type === 'contribution' ? 'contribution' : 'report';
   var rec = { type: type, programKey: '', sheet: '', stage: '', kpi: '', title: '' };
@@ -750,6 +780,7 @@ function api_submit(json) {
   needStage_(u, rec.stage);
   rec.outcome = ['done', 'partial', 'postponed'].indexOf(d.outcome) !== -1 ? d.outcome : 'done';
   rec.execDate = date_(d.execDate); rec.actual = number_(d.actual); rec.evidence = url_(d.evidence); rec.note = text_(d.note, 1000);
+  if (prop_('EVIDENCE_RULE') === 'on' && type === 'report' && rec.outcome === 'done' && !rec.evidence && !rec.note) throw fail_('INPUT', 'أرفق شاهداً أو اكتب ملاحظة عمّا نُفّذ قبل إرسال تقرير «تم التنفيذ».');
   var lock = LockService.getScriptLock();
   lock.waitLock(15000);
   try {
@@ -772,7 +803,7 @@ function api_submit(json) {
 /** A leader approves or returns a report. Approval of a completed programme writes its execution fields to the main file. */
 function api_review(id, decision, note) {
   var u = me_();
-  needLeader_(u);
+  needMayLead_(u);
   rate_(u, 'review', 120, 300);
   if (['approved', 'returned'].indexOf(decision) === -1) throw fail_('INPUT', 'قرار غير معروف');
   var lock = LockService.getScriptLock();
@@ -780,7 +811,8 @@ function api_review(id, decision, note) {
   try {
     var s = readTable_(SH.SUBS, SUB_COLS).filter(function (x) { return x.id === id; })[0];
     if (!s) throw fail_('GONE', 'التقرير غير موجود');
-    needStage_(u, s.stage);
+    needLeads_(u, s.stage, s.kpi);
+    if (prop_('REVIEW_RULE') === 'on' && String(s.by).toLowerCase() === u.email) throw fail_('FORBIDDEN', 'لا يبتّ المرسل في تقريره. يراجعه قائد آخر.');
     if (s.status !== 'pending') throw fail_('STATE', 'سبق البت في هذا التقرير');
     return decide_(s, decision, note, u);
   } finally { lock.releaseLock(); }
@@ -789,7 +821,7 @@ function api_review(id, decision, note) {
 /** A leader edits execution fields directly. The stage principal's comment is for the principal and the owner. */
 function api_updateExecution(key, json) {
   var u = me_();
-  needLeader_(u);
+  needMayLead_(u);
   rate_(u, 'write', 120, 300);
   var d = JSON.parse(json), fields = {};
   ['done', 'actual', 'evidence'].forEach(function (k) { if (k in d) fields[k] = d[k]; });
@@ -799,7 +831,7 @@ function api_updateExecution(key, json) {
   }
   var p = readSnapshot_().programs.filter(function (x) { return x.key === key; })[0];
   if (!p) throw fail_('GONE', 'البرنامج غير موجود في آخر مزامنة.');
-  needStage_(u, p.stage);
+  needLeads_(u, p.stage, p.kpi);
   if (prop_('WRITEBACK') !== 'on') throw fail_('SETUP', 'الكتابة في المنصة الشاملة متوقفة. يفعّلها مالك النظام من الإعدادات.');
   var lock = LockService.getScriptLock();
   lock.waitLock(20000);
@@ -814,14 +846,14 @@ function api_updateExecution(key, json) {
 /** Undo for a leader's own edit: puts back what the cells held before it. Works for six hours and only once. */
 function api_undoExecution(undoId) {
   var u = me_();
-  needLeader_(u);
+  needMayLead_(u);
   rate_(u, 'write', 120, 300);
   var cache = CacheService.getScriptCache(), k = 'undo:' + String(undoId || '').replace(/[^\w-]/g, '').slice(0, 60), raw = cache.get(k), rec = null;
   try { rec = raw ? JSON.parse(raw) : null; } catch (e) { rec = null; }
   if (!rec || rec.by !== u.email) throw fail_('GONE', 'انتهت مهلة التراجع عن هذا التعديل.');
   var p = readSnapshot_().programs.filter(function (x) { return x.key === rec.key; })[0];
   if (!p) throw fail_('GONE', 'البرنامج غير موجود في آخر مزامنة.');
-  needStage_(u, p.stage);
+  needLeads_(u, p.stage, p.kpi);
   if (prop_('WRITEBACK') !== 'on') throw fail_('SETUP', 'الكتابة في المنصة الشاملة متوقفة. يفعّلها مالك النظام من الإعدادات.');
   var lock = LockService.getScriptLock();
   lock.waitLock(20000);
@@ -900,6 +932,9 @@ function api_saveSettings(json) {
   }
   if ('writeBack' in d) p.setProperty('WRITEBACK', d.writeBack ? 'on' : 'off');
   if ('planEdit' in d) p.setProperty('PLAN_EDIT', d.planEdit ? 'on' : 'off');
+  // Two control rules the admins may switch on. Both are off until they do, so nothing changes for a school that has not chosen them.
+  if ('needEvidence' in d) p.setProperty('EVIDENCE_RULE', d.needEvidence ? 'on' : 'off');
+  if ('noSelfReview' in d) p.setProperty('REVIEW_RULE', d.noSelfReview ? 'on' : 'off');
   if ('slogan' in d) p.setProperty('SLOGAN', text_(d.slogan, 160));
   if ('welcome' in d) p.setProperty('WELCOME', text_(d.welcome, 300));
   if ('notify' in d) p.setProperty('NOTIFY', d.notify ? 'on' : 'off');
@@ -931,6 +966,26 @@ function api_saveSettings(json) {
   if (d.syncHours && [1, 2, 4, 6, 12].indexOf(+d.syncHours) !== -1) { p.setProperty('SYNC_HOURS', String(+d.syncHours)); installTrigger_(+d.syncHours); }
   audit_(u, 'settings', fileName, { t1: d.t1, t2: d.t2, scope: d.scope, writeBack: d.writeBack, notify: d.notify, notifyTime: d.notifyTime, syncHours: d.syncHours, mainFileChanged: !!d.mainFile, links: 'links' in d ? (d.links || []).length : undefined });
   return JSON.stringify({ settings: publicSettings_(), fileName: fileName, links: linksFor_(u) });
+}
+
+/**
+ * Everything the platform itself keeps, as one JSON text the owner saves as a file: staff, reports, assignments, history,
+ * calendars, timetable, planner, visits and the activity log. The snapshot of the main file is left out (a sync rebuilds it),
+ * and so are pictures and sent-notification marks. Owner only: it holds every person's data.
+ */
+var BACKUP_SHEETS = ['USERS', 'SUBS', 'ASSIGN', 'HISTORY', 'TASKS', 'SESSIONS', 'TIMETABLE', 'PLANNER', 'VISITS', 'DEV', 'AUDIT'];
+function api_backup() {
+  var u = me_();
+  if (u.role !== 'owner') throw fail_('FORBIDDEN', 'النسخة الاحتياطية لمالك النظام فقط.');
+  rate_(u, 'backup', 6, 3600);
+  var ss = SpreadsheetApp.getActive(), out = { app: AP.APP_NAME, madeAt: nowIso_(), by: u.email, sheets: {} };
+  BACKUP_SHEETS.forEach(function (k) {
+    var sh = ss.getSheetByName(SH[k]);
+    if (!sh || sh.getLastRow() === 0) { out.sheets[SH[k]] = []; return; }
+    out.sheets[SH[k]] = sh.getRange(1, 1, sh.getLastRow(), Math.max(sh.getLastColumn(), 1)).getValues().map(function (row) { return row.map(cellOut_); });
+  });
+  audit_(u, 'backup', '', { rows: Object.keys(out.sheets).reduce(function (n, k) { return n + out.sheets[k].length; }, 0) });
+  return JSON.stringify(out);
 }
 
 function api_audit(limit) {
@@ -1003,6 +1058,7 @@ function decide_(s, decision, note, u) {
 /** Undo for a report its sender has just sent: only while it is still waiting for review. */
 function api_withdraw(id) {
   var u = me_();
+  needWrite_(u);
   rate_(u, 'submit', 30, 300);
   var lock = LockService.getScriptLock();
   lock.waitLock(15000);
@@ -1019,14 +1075,14 @@ function api_withdraw(id) {
 /** Undo for a review decision: the report waits again, and anything the approval wrote to the main file is put back. */
 function api_reopen(id) {
   var u = me_();
-  needLeader_(u);
+  needMayLead_(u);
   rate_(u, 'review', 120, 300);
   var lock = LockService.getScriptLock();
   lock.waitLock(20000);
   try {
     var s = readTable_(SH.SUBS, SUB_COLS).filter(function (x) { return x.id === id; })[0];
     if (!s) throw fail_('GONE', 'التقرير غير موجود');
-    needStage_(u, s.stage);
+    needLeads_(u, s.stage, s.kpi);
     if (s.status === 'pending') throw fail_('STATE', 'التقرير بانتظار المراجعة أصلاً.');
     var program = null, plan = s.type === 'add' || s.type === 'remove', reverted = false;
     if (s.undo && plan) { planRevert_(s, u); reverted = true; }
@@ -1081,7 +1137,7 @@ function sessionOut_(r) { return { id: r.id, weekday: +r.weekday, start: String(
 function api_myCalendar() {
   var u = me_();
   return JSON.stringify({
-    tasks: isLeader_(u) ? ownRows_(SH.TASKS, TASK_COLS, u.email).map(taskOut_) : [],
+    tasks: isAdmin_(u) ? ownRows_(SH.TASKS, TASK_COLS, u.email).map(taskOut_) : [],
     sessions: ownRows_(SH.SESSIONS, SESSION_COLS, u.email).map(sessionOut_)
   });
 }
@@ -1318,6 +1374,7 @@ function api_planOptions(stage, kpi) {
  */
 function api_planRequest(json) {
   var u = me_(), lead = isLeader_(u);
+  needWrite_(u);
   if (!lead && prop_('PLAN_EDIT') !== 'on') throw fail_('FORBIDDEN', 'إضافة البرامج وحذفها غير متاحة للمعلمين حالياً. يفعّلها مديرو النظام من الإعدادات.');
   rate_(u, 'plan', 40, 300);
   var d = JSON.parse(json), rec;
@@ -1963,7 +2020,7 @@ function visitSheet_() { var ss = SpreadsheetApp.getActive(); return ss.getSheet
 
 /** Admins: the forms and every visit in their stages. A teacher: their own visits that were shared with them. */
 function api_visits() {
-  var u = me_(), lead = isLeader_(u), rows = readTable_(SH.VISITS, VISIT_COLS);
+  var u = me_(), lead = isAdmin_(u), rows = readTable_(SH.VISITS, VISIT_COLS);
   if (!lead) return JSON.stringify({ lead: false, visits: rows.filter(function (r) { return String(r.teacher).toLowerCase() === u.email && String(r.shared) === '1'; }).map(function (r) { return visitOut_(r, u, false, false); }) });
   var stages = stagesOf_(u);
   return JSON.stringify({ lead: true, kind: VISIT_ROLE[u.role] || '', canEditForms: canEditVisitForms_(u), forms: visitForms_(),
@@ -1972,7 +2029,7 @@ function api_visits() {
 
 /** One visit in full: for an admin of its stage, or for its teacher once it is shared. */
 function api_visit(id) {
-  var u = me_(), lead = isLeader_(u), r = visitRow_(id);
+  var u = me_(), lead = isAdmin_(u), r = visitRow_(id);
   if (!r) throw fail_('GONE', 'الزيارة غير موجودة');
   if (lead) needStage_(u, String(r.stage));
   else if (String(r.teacher).toLowerCase() !== u.email || String(r.shared) !== '1') throw fail_('FORBIDDEN', 'هذه الزيارة ليست لك.');
@@ -2302,6 +2359,7 @@ function driveUpload_(name, mime, bytes, folder) {
  */
 function api_uploadEvidence(json) {
   var u = me_();
+  needWrite_(u);
   rate_(u, 'upload', 12, 600);
   var d = JSON.parse(json), mime = String(d.mime || ''), data = String(d.data || ''), stage, kpi, title;
   if (d.programKey) {
@@ -2380,6 +2438,7 @@ function setAssignments_(u, pairs) {
     if (!x.email) return;
     var who = users[x.email];
     if (!who || !who.active) throw fail_('INPUT', 'المستخدم غير موجود أو موقوف.');
+    if (who.role === 'follower') throw fail_('INPUT', 'حساب المتابعة للعرض فقط، ولا تُسند إليه البرامج.');
     if (stagesOf_(who).indexOf(p.stage) === -1) throw fail_('INPUT', 'هذا المستخدم ليس من منسوبي مرحلة البرنامج: ' + p.stage);
   });
   var cur = {}, order = [], before = [];
@@ -2475,3 +2534,121 @@ function relinkAssignments_(programs) {
 }
 
 if (typeof module !== 'undefined') module.exports = { SH: SH, SUB_COLS: SUB_COLS, USER_COLS: USER_COLS };
+
+/* ---------- professional development ---------- */
+// What each member of staff has to complete for their professional development: the 360° evaluation, the development plan,
+// courses and licences. The company's own platform stays the place where these are done; this is where the school follows them.
+// Items are typed in by an admin or brought in as a table (for instance an export of that platform). Nothing is sent to it.
+var DEV_COLS = ['id', 'email', 'name', 'kind', 'title', 'status', 'due', 'note', 'source', 'by', 'at'];
+var DEV_KINDS = ['evaluation', 'plan', 'course', 'licence', 'other'];
+var DEV_STATES = ['todo', 'doing', 'done'];
+/** The sheet is made on first use, so a platform installed before this section needs no new setup run. */
+function devSheet_() {
+  var ss = SpreadsheetApp.getActive();
+  if (!ss.getSheetByName(SH.DEV)) ensureSheet_(ss, SH.DEV, DEV_COLS);
+  return ss.getSheetByName(SH.DEV);
+}
+function devRows_() { devSheet_(); return readTable_(SH.DEV, DEV_COLS); }
+function devOut_(r) { return { id: r.id, email: String(r.email).toLowerCase(), name: r.name, kind: r.kind, title: r.title, status: r.status, due: r.due, note: r.note, source: r.source }; }
+/** The staff an admin follows: everyone who shares a stage with them. */
+function devScope_(u) {
+  var mine = stagesOf_(u), map = users_(), out = {};
+  Object.keys(map).forEach(function (k) { if (stagesOf_(map[k]).some(function (s) { return mine.indexOf(s) !== -1; })) out[k] = map[k]; });
+  return out;
+}
+/** An admin gets the items of the staff in their stages, and the list of those staff. Everyone else gets their own items. */
+function api_devList() {
+  var u = me_(), rows = devRows_();
+  if (!isAdmin_(u)) return JSON.stringify({ admin: false, items: rows.filter(function (r) { return String(r.email).toLowerCase() === u.email; }).map(devOut_) });
+  var scope = devScope_(u);
+  return JSON.stringify({
+    admin: true, items: rows.filter(function (r) { return !!scope[String(r.email).toLowerCase()]; }).map(devOut_),
+    people: Object.keys(scope).filter(function (k) { return scope[k].active; }).map(function (k) { return { email: k, name: scope[k].name }; })
+  });
+}
+function devRec_(d, scope) {
+  var email = String(d.email || '').toLowerCase().trim(), who = scope[email];
+  if (!who) throw fail_('INPUT', 'اختر موظفاً من مراحلك.');
+  var rec = { email: email, name: who.name, kind: DEV_KINDS.indexOf(d.kind) !== -1 ? d.kind : 'other', title: text_(d.title, 160),
+    status: DEV_STATES.indexOf(d.status) !== -1 ? d.status : 'todo', due: date_(d.due), note: text_(d.note, 500) };
+  if (!rec.title) throw fail_('INPUT', 'اكتب عنوان البند.');
+  return rec;
+}
+function devRow_(full) { return DEV_COLS.map(function (c) { return full[c]; }); }
+function api_saveDev(json) {
+  var u = me_();
+  needAdmin_(u);
+  rate_(u, 'dev', 200, 300);
+  var d = JSON.parse(json), scope = devScope_(u), rec = devRec_(d, scope), lock = LockService.getScriptLock();
+  lock.waitLock(15000);
+  try {
+    var id = String(d.id || ''), old = id ? devRows_().filter(function (r) { return r.id === id; })[0] : null;
+    if (id && !old) throw fail_('GONE', 'البند غير موجود.');
+    if (old && !scope[String(old.email).toLowerCase()]) throw fail_('FORBIDDEN', 'هذا البند خارج مراحلك.');
+    var full = { id: old ? old.id : Utilities.getUuid(), email: rec.email, name: rec.name, kind: rec.kind, title: rec.title, status: rec.status, due: rec.due, note: rec.note,
+      source: old ? old.source : 'manual', by: u.email, at: nowIso_() };
+    var sh = devSheet_();
+    if (old) sh.getRange(old._row, 1, 1, DEV_COLS.length).setValues([devRow_(full)]); else sh.appendRow(devRow_(full));
+    audit_(u, old ? 'dev-updated' : 'dev-added', full.title, { id: full.id, email: full.email });
+    return JSON.stringify(devOut_(full));
+  } finally { lock.releaseLock(); }
+}
+function api_deleteDev(id) {
+  var u = me_();
+  needAdmin_(u);
+  rate_(u, 'dev', 200, 300);
+  var lock = LockService.getScriptLock();
+  lock.waitLock(15000);
+  try {
+    var r = devRows_().filter(function (x) { return x.id === String(id); })[0];
+    if (!r) throw fail_('GONE', 'البند غير موجود.');
+    if (!devScope_(u)[String(r.email).toLowerCase()]) throw fail_('FORBIDDEN', 'هذا البند خارج مراحلك.');
+    devSheet_().deleteRow(r._row);
+    audit_(u, 'dev-deleted', r.title, { id: r.id, email: r.email });
+    return '';
+  } finally { lock.releaseLock(); }
+}
+/** A member of staff moves their own item along. An admin may do it for the staff in their stages. */
+function api_setDevStatus(id, status) {
+  var u = me_();
+  needWrite_(u);
+  rate_(u, 'dev', 200, 300);
+  if (DEV_STATES.indexOf(status) === -1) throw fail_('INPUT', 'حالة غير معروفة');
+  var lock = LockService.getScriptLock();
+  lock.waitLock(15000);
+  try {
+    var r = devRows_().filter(function (x) { return x.id === String(id); })[0];
+    if (!r) throw fail_('GONE', 'البند غير موجود.');
+    var email = String(r.email).toLowerCase();
+    if (email !== u.email && !(isAdmin_(u) && devScope_(u)[email])) throw fail_('FORBIDDEN', 'هذا البند ليس لك.');
+    var full = { id: r.id, email: email, name: r.name, kind: r.kind, title: r.title, status: status, due: r.due, note: r.note, source: r.source, by: u.email, at: nowIso_() };
+    devSheet_().getRange(r._row, 1, 1, DEV_COLS.length).setValues([devRow_(full)]);
+    audit_(u, 'dev-status', r.title, { id: r.id, status: status });
+    return JSON.stringify(devOut_(full));
+  } finally { lock.releaseLock(); }
+}
+/** Adds many items at once from a table. A row for someone outside the admin's stages, or one already there, is skipped and reported. */
+function api_importDev(json) {
+  var u = me_();
+  needAdmin_(u);
+  rate_(u, 'devimport', 10, 600);
+  var d = JSON.parse(json), list = Array.isArray(d.rows) ? d.rows : [];
+  if (!list.length || list.length > 500) throw fail_('INPUT', 'أضف من صف واحد إلى 500 صف.');
+  var scope = devScope_(u), added = 0, skipped = [], lock = LockService.getScriptLock();
+  lock.waitLock(20000);
+  try {
+    var sh = devSheet_(), have = {};
+    devRows_().forEach(function (r) { have[String(r.email).toLowerCase() + '|' + r.kind + '|' + r.title] = true; });
+    list.forEach(function (x, i) {
+      var rec;
+      try { rec = devRec_(x || {}, scope); } catch (e) { skipped.push({ row: i + 1, why: String(e.message).split('|')[1] || '' }); return; }
+      var k = rec.email + '|' + rec.kind + '|' + rec.title;
+      if (have[k]) { skipped.push({ row: i + 1, why: 'موجود من قبل' }); return; }
+      have[k] = true;
+      sh.appendRow(devRow_({ id: Utilities.getUuid(), email: rec.email, name: rec.name, kind: rec.kind, title: rec.title, status: rec.status, due: rec.due, note: rec.note, source: 'import', by: u.email, at: nowIso_() }));
+      added++;
+    });
+    audit_(u, 'dev-imported', '', { added: added, skipped: skipped.length });
+    return JSON.stringify({ added: added, skipped: skipped });
+  } finally { lock.releaseLock(); }
+}

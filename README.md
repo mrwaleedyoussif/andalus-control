@@ -67,6 +67,9 @@ The Principal, the Academic Vice Principal and the Vice Principal are the system
 | Role | Sees | Can do |
 |---|---|---|
 | معلم Teacher | Programmes of their stages, their own reports and requests | Report execution of a programme, add work on an indicator. When the admins allow it: propose a new programme, and ask to remove a programme they are responsible for. |
+| مسؤول مؤشر Indicator owner | Programmes of their stages; reports of their own indicators | Everything a teacher can do, and for the indicators the main file names them for (مسؤول المؤشر, matched by the name written under المستخدمون): approve or return reports, reopen them, edit execution data. Nothing outside those indicators, and no admin screens |
+| مشرف مرحلة Stage supervisor | Everything in their stages except classroom visits | Approve or return reports and plan requests, add and remove programmes, edit execution data, refresh from the main file. Not a system admin: no users, settings, alerts, data check, weekly report, assignment of responsible people, timetable building or visits |
+| متابع Follower | Programmes, indicators and progress of their stages | Nothing: a view-only account. It cannot report, propose, upload evidence or be given a programme, and the server refuses these even if the page is bypassed |
 | وكيل المدرسة Vice Principal (admin) | Everything in their stages | Approve or return reports and plan requests, add and remove programmes, edit execution data, assign responsible people, sync, data checks, users, settings, notifications, activity log |
 | وكيل الشؤون التعليمية Academic Vice Principal (admin) | Everything in their stages | Same as Vice Principal |
 | مدير المدرسة Principal (admin) | Everything in their stages | Same, plus the stage principal's comment |
@@ -424,6 +427,22 @@ what changed. They are kept even while the weekly email is switched off. The fir
 Skip parts B and C. In step 5 choose "Anyone within" your school domain, and give staff the `/exec` link itself.
 The same interface opens inside Google, signed in by the school account, without a separate website or install.
 
+## Control rules, export, backup and professional development
+
+- **Two control rules**, both off until an admin switches them on under الإدارة > الإعدادات:
+  - *A “done” report needs evidence or a note.* A report marked done is refused without an evidence link or a note.
+  - *Nobody decides their own report.* The sender cannot approve or return it; another leader of the stage does.
+- **Download for Excel.** Leaders get it beside "Copy list" on the programmes page: the filtered list as a CSV file Excel opens directly.
+- **Backup.** The owner downloads one JSON file from the activity log tab: staff, reports, assignments, history, calendars, timetable,
+  planner, visits, development items and the activity log. The copy of the main file is left out (a sync rebuilds it), and so are pictures.
+- **التطور المهني (professional development).** A page for what each member of staff has to complete: the 360° evaluation, the development
+  plan, courses and licences. It is done on the company platform and followed here; nothing is sent to that platform.
+  - Admins add, change and delete items for the staff of their own stages, and change their state.
+  - Everyone sees their own items and moves them between not started, in progress and done. A follower only reads.
+  - `api_importDev` adds up to 500 items from a table at once (for instance an export of the company platform) and reports each row it
+    skips. The page does not offer the import yet; the server function is ready and tested.
+  - The sheet `Development` is created on first use, so no new setup run is needed.
+
 ## Tests
 
 `main.json` is a JSON export of the visible tabs of the main file. It holds school data, so it is not kept here.
@@ -437,6 +456,20 @@ AP_FIXTURE=/path/to/main.json node test/server.test.js
 ```
 
 The browser and website tests read small Excel and CSV files kept in `test/fixtures/`.
+
+The permission levels, the control rules, the backup and the professional development section have their own test. It needs no school data: it reads a small invented main file,
+`test/fixtures/mini-main.json`.
+
+```bash
+node test/roles.test.js
+```
+
+The professional development page and the list export have a browser test on the preview page:
+
+```bash
+AP_FIXTURE=test/fixtures/mini-main.json AP_PREVIEW_OUT=/path/to/preview.html node build.js
+node test/growth.ui.test.js /path/to/preview.html
+```
 
 The schedule builder's engine has its own test and needs no file:
 

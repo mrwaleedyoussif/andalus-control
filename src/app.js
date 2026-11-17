@@ -30,7 +30,7 @@
       mainFile: 'رابط ملف المنصة الشاملة', mainFileHint: 'الصق رابط Google Sheets للملف الرئيسي. يُحفظ المعرّف فقط.', connected: 'الملف مربوط', notConnected: 'لم يُربط ملف بعد',
       t1: 'بداية الفصل الأول', t2: 'بداية الفصل الثاني', scope: 'المراحل التي تغطيها المنصة', wb: 'السماح بالكتابة في المنصة الشاملة (بيانات التنفيذ فقط)', syncEvery: 'المزامنة كل', hours: 'ساعات',
       saveSettings: 'حفظ الإعدادات', settingsSaved: 'حُفظت الإعدادات.', time: 'الوقت', action: 'الإجراء', targetCol: 'الهدف', lastSync: 'آخر مزامنة', never: 'لم تتم', syncNow: 'مزامنة', syncing: 'جارٍ المزامنة…', synced: 'تمت المزامنة.',
-      r_owner: 'مالك النظام', r_principal: 'مدير المدرسة', r_avp: 'وكيل الشؤون التعليمية', r_vp: 'وكيل المدرسة', r_teacher: 'معلم',
+      r_owner: 'مالك النظام', r_principal: 'مدير المدرسة', r_avp: 'وكيل الشؤون التعليمية', r_vp: 'وكيل المدرسة', r_teacher: 'معلم', growth: 'التطور المهني', growthLead: 'ما على كل موظف إنجازه في تطوره المهني: التقييم 360° وخطة التطور والدورات والرخص. يُنجز في منصة الشركة، ويُتابع هنا.', dk_evaluation: 'تقييم 360°', dk_plan: 'خطة التطور', dk_course: 'دورة', dk_licence: 'رخصة', dk_other: 'أخرى', ds_todo: 'لم يبدأ', ds_doing: 'جارٍ', ds_done: 'مكتمل', devKind: 'النوع', devTitle: 'البند', devDue: 'الموعد', devNote: 'ملاحظة', devAdd: 'إضافة البند', devAddTitle: 'إضافة بند لموظف', devEmpty: 'لا بنود لك حتى الآن.', devEmptyAdmin: 'لا بنود بعد. أضف أول بند من النموذج أدناه.', exportCsv: 'تنزيل لـ Excel', backupBtn: 'تنزيل نسخة احتياطية', backupLead: 'ملف واحد فيه كل ما تحفظه المنصة: المستخدمون والتقارير والإسناد والجداول والزيارات وسجل النشاط. احفظه في مكان آمن.', backupDone: 'نُزّلت النسخة الاحتياطية.', needEvidenceL: 'تقرير «تم التنفيذ» يحتاج شاهداً أو ملاحظة', noSelfReviewL: 'لا يبتّ المرسل في تقريره: يراجعه قائد آخر', r_supervisor: 'مشرف مرحلة', r_indicator: 'مسؤول مؤشر', r_follower: 'متابع (عرض فقط)', followerNote: 'حسابك للمتابعة فقط: تطّلع على البرامج والتقدم دون رفع تقارير أو تعديل.',
       setupNeeded: 'لم يُربط ملف المنصة الشاملة بعد. يضيف مالك النظام الرابط من الإدارة ثم الإعدادات.', denied: 'لا يمكن فتح المنصة', close: 'إغلاق', cancel: 'إلغاء', lang: 'English', theme: 'المظهر',
       signIn: 'تسجيل الدخول', signInLead: 'ادخل بحساب Google الخاص بالمدرسة. لا توجد كلمات مرور.', signOut: 'خروج', signedOut: 'انتهت الجلسة. سجّل الدخول من جديد.', sar: 'ر.س', days: 'يوم',
       alerts: 'التنبيهات', school: 'المدرسة', allSchools: 'كل المدارس', sPrivate: 'مدارس الأندلس الأهلية', sIntl: 'مدارس الأندلس العالمية', sPrivateSub: 'Alandalus Private Schools', sIntlSub: 'Andalus International Schools',
@@ -81,7 +81,7 @@
       mainFile: 'Link to the main file', mainFileHint: 'Paste the Google Sheets link of the main file. Only its ID is stored.', connected: 'File connected', notConnected: 'No file connected yet',
       t1: 'Term 1 starts', t2: 'Term 2 starts', scope: 'Stages the platform covers', wb: 'Allow writing to the main file (execution data only)', syncEvery: 'Sync every', hours: 'hours',
       saveSettings: 'Save settings', settingsSaved: 'Settings saved.', time: 'Time', action: 'Action', targetCol: 'Target', lastSync: 'Last sync', never: 'never', syncNow: 'Sync', syncing: 'Syncing…', synced: 'Sync complete.',
-      r_owner: 'System owner', r_principal: 'Principal', r_avp: 'Academic Vice Principal', r_vp: 'Vice Principal', r_teacher: 'Teacher',
+      r_owner: 'System owner', r_principal: 'Principal', r_avp: 'Academic Vice Principal', r_vp: 'Vice Principal', r_teacher: 'Teacher', growth: 'Professional development', growthLead: 'What each member of staff has to complete: the 360° evaluation, the development plan, courses and licences. It is done on the company platform and followed here.', dk_evaluation: '360° evaluation', dk_plan: 'Development plan', dk_course: 'Course', dk_licence: 'Licence', dk_other: 'Other', ds_todo: 'Not started', ds_doing: 'In progress', ds_done: 'Done', devKind: 'Kind', devTitle: 'Item', devDue: 'Due', devNote: 'Note', devAdd: 'Add the item', devAddTitle: 'Add an item for a member of staff', devEmpty: 'You have no items yet.', devEmptyAdmin: 'No items yet. Add the first one with the form below.', exportCsv: 'Download for Excel', backupBtn: 'Download a backup', backupLead: 'One file with everything the platform keeps: staff, reports, assignments, timetables, visits and the activity log. Keep it somewhere safe.', backupDone: 'Backup downloaded.', needEvidenceL: 'A “done” report needs evidence or a note', noSelfReviewL: 'Nobody decides their own report: another leader reviews it', r_supervisor: 'Stage supervisor', r_indicator: 'Indicator owner', r_follower: 'Follower (view only)', followerNote: 'Your account is view-only: you can follow programmes and progress, but not report or edit.',
       setupNeeded: 'The main file is not connected yet. The system owner adds its link under Admin, then Settings.', denied: 'The platform cannot be opened', close: 'Close', cancel: 'Cancel', lang: 'العربية', theme: 'Theme',
       signIn: 'Sign in', signInLead: 'Use your school Google account. There are no passwords.', signOut: 'Sign out', signedOut: 'Your session ended. Sign in again.', sar: 'SAR', days: 'd',
       alerts: 'Notifications', school: 'School', allSchools: 'All schools', sPrivate: 'Alandalus Private Schools', sIntl: 'Andalus International Schools',
@@ -117,14 +117,14 @@
     'D.Br 3.1': 'School evaluation', 'D.Br 4.1': 'Safety and security' };
   var ST = ['done', 'active', 'soon', 'overdue', 'upcoming', 'undated'];
   var RINGS = ['done', 'active', 'soon', 'overdue'];   // the monitor's rings, outer to inner
-  var LEAD = ['owner', 'principal', 'avp', 'vp'];
+  var LEAD = ['owner', 'principal', 'avp', 'vp', 'supervisor'], ADMIN = ['owner', 'principal', 'avp', 'vp'];
   var ICON = {
     home: 'M3 11l9-8 9 8M5 10v10h5v-6h4v6h5V10', programs: 'M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01', review: 'M4 13l2-8h12l2 8M4 13v6h16v-6M4 13h5l1 3h4l1-3h5',
     checks: 'M5 21V4M5 4h11l-2 4 2 4H5', mine: 'M20 21a8 8 0 10-16 0M12 11a4 4 0 100-8 4 4 0 000 8', admin: 'M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M14 4v4M8 10v4M16 16v4',
     search: 'M11 19a8 8 0 100-16 8 8 0 000 16zM21 21l-4.3-4.3', sync: 'M20 11a8 8 0 00-14.9-3M4 5v4h4M4 13a8 8 0 0014.9 3M20 19v-4h-4', lang: 'M12 21a9 9 0 100-18 9 9 0 000 18zM3 12h18M12 3c3 3.5 3 14.5 0 18M12 3c-3 3.5-3 14.5 0 18',
     theme: 'M20 14.5A8 8 0 019.5 4a8 8 0 1010.5 10.5z', out: 'M9 21H5V3h4M16 17l5-5-5-5M21 12H9', chev: 'M9 6l6 6-6 6', x: 'M6 6l12 12M18 6L6 18', more: 'M5 12h.01M12 12h.01M19 12h.01',
     alerts: 'M6 9a6 6 0 1112 0c0 6 3 7 3 7H3s3-1 3-7M10 20h4', weekly: 'M6 3h9l4 4v14H6zM14 3v5h5M9 13h6M9 17h6', timetable: 'M4 5h16v14H4zM4 10h16M4 14.5h16M9.5 5v14M15 5v14', calendar: 'M4 5h16v15H4zM4 10h16M8 3v4M16 3v4', mycal: 'M4 5h16v15H4zM4 10h16M8 3v4M16 3v4M9 15l2 2 4-4',
-    people: 'M16 20a6 6 0 00-12 0M10 10a4 4 0 100-8 4 4 0 000 8M22 20a5 5 0 00-6-4.9M15 3a4 4 0 010 7', back: 'M15 6l-6 6 6 6', fwd: 'M9 6l6 6-6 6',
+    growth: 'M4 19h16M5 15l4-5 4 3 6-8M15 5h4v4', people: 'M16 20a6 6 0 00-12 0M10 10a4 4 0 100-8 4 4 0 000 8M22 20a5 5 0 00-6-4.9M15 3a4 4 0 010 7', back: 'M15 6l-6 6 6 6', fwd: 'M9 6l6 6-6 6',
     undo: 'M9 14L4 9l5-5M4 9h10a6 6 0 010 12h-3', redo: 'M15 14l5-5-5-5M20 9H10a6 6 0 000 12h3', plus: 'M12 5v14M5 12h14', upload: 'M12 16V4M7 9l5-5 5 5M5 20h14', active: 'M12 21a9 9 0 100-18 9 9 0 000 18zM10 8.5l5.5 3.5-5.5 3.5z', done: 'M5 12l5 5 9-10', soon: 'M12 21a9 9 0 100-18 9 9 0 000 18zM12 7v5l3 2', overdue: 'M12 3l10 18H2L12 3zM12 10v5M12 18h.01', total: 'M4 5h16v14H4zM4 10h16M9 5v14'
   };
 
@@ -222,6 +222,13 @@
   function grade(pct) { return RULES.grade(pct); }
   function indicatorState(list) { return RULES.indicatorState(list, S.today); }
   function isLead() { return S.me && LEAD.indexOf(S.me.role) !== -1; }
+  /** System admins. A supervisor leads their stages without being one: no users, settings, alerts, assignment, timetable or visits. */
+  function isAdmin() { return !!S.me && ADMIN.indexOf(S.me.role) !== -1; }
+  /** Leads this programme or report: a leader, or the indicator owner the main file names for its indicator and stage. */
+  function leads(x) { return isLead() || (!!S.me && S.me.role === 'indicator' && (S.me.leads || []).indexOf(x.kpi + '|' + x.stage) !== -1); }
+  function leadsAny() { return isLead() || (!!S.me && S.me.role === 'indicator' && (S.me.leads || []).length > 0); }
+  /** A view-only account: sees its stages, changes nothing. The server refuses its writes as well. */
+  function isFollower() { return !!S.me && S.me.role === 'follower'; }
   /** A button to another platform. It opens in a new tab and tells that site nothing about this one. */
   function linkNode(l, cls) {
     if (!/^https:\/\//i.test(String(l.url))) return null;
@@ -316,13 +323,13 @@
   function busy(btn, on) { btn.disabled = on; }
 
   /* ---------- shell ---------- */
-  var GROUPS = [['home', 'calendar', 'programs', 'people', 'weekly'], ['review', 'alerts', 'checks'], ['timetable', 'builder', 'visits', 'mycal', 'mine'], ['admin']];
+  var GROUPS = [['home', 'calendar', 'programs', 'people', 'weekly'], ['review', 'alerts', 'checks'], ['timetable', 'builder', 'visits', 'growth', 'mycal', 'mine'], ['admin']];
   function navItems() {
     if (!S.me) return [];
-    var lead = isLead();
-    return ['home', 'calendar', 'programs'].concat(lead ? ['people', 'weekly', 'review', 'alerts', 'checks'] : []).concat(['timetable']).concat(lead ? ['builder'] : []).concat(['visits', 'mycal', 'mine']).concat(lead ? ['admin'] : []);
+    var lead = isLead(), admin = isAdmin();
+    return ['home', 'calendar', 'programs'].concat(admin ? ['people', 'weekly'] : []).concat(lead || leadsAny() ? ['review'] : []).concat(admin ? ['alerts', 'checks'] : []).concat(['timetable']).concat(admin ? ['builder'] : []).concat(['visits', 'growth', 'mycal', 'mine']).concat(admin ? ['admin'] : []);
   }
-  function waiting() { return S.submissions.filter(function (s) { return s.status === 'pending' && (isLead() || String(s.by).toLowerCase() === S.me.email); }).length; }
+  function waiting() { return S.submissions.filter(function (s) { return s.status === 'pending' && (leads(s) || String(s.by).toLowerCase() === S.me.email); }).length; }
   function navBtn(v) {
     var n = v === 'review' ? waiting() : v === 'visits' ? (S.visitsNew || 0) : 0;
     return h('button', { type: 'button', 'data-view': v, 'aria-current': S.view === v ? 'page' : null, onclick: function () { go(v); } }, ic(v), h('span', { text: t(v) }), n ? h('span', { class: 'badge', text: n }) : null);
@@ -443,7 +450,7 @@
     var m = clear($('main'));
     if (coverOn()) { m.appendChild(vCover()); return; }
     if (!S.settings.mainFileSet && S.view !== 'admin') m.appendChild(h('div', { class: 'note warn', text: t('setupNeeded') }));
-    var fn = { home: vHome, calendar: vCalendar, programs: vPrograms, people: vPeople, review: vReview, weekly: vWeekly, alerts: vAlerts, mine: vMine, mycal: vMyCal, timetable: vTimetable, builder: vBuilder, visits: vVisits, checks: vChecks, admin: vAdmin }[S.view] || vHome;
+    var fn = { home: vHome, calendar: vCalendar, programs: vPrograms, people: vPeople, review: vReview, weekly: vWeekly, alerts: vAlerts, mine: vMine, mycal: vMyCal, timetable: vTimetable, builder: vBuilder, visits: vVisits, growth: vGrowth, checks: vChecks, admin: vAdmin }[S.view] || vHome;
     m.appendChild(fn());
   }
   function render() {
@@ -742,8 +749,9 @@
     }
     v.appendChild(h('div', { class: 'headrow' }, h('p', { class: 'lead', id: 'resultCount', text: list.length + ' ' + t('results') + (f.q ? ' · «' + f.q + '»' : '') }),
       canPlan() || isLead() ? h('div', { class: 'actions' }, canPlan() ? h('button', { class: 'btn sm', type: 'button', id: 'planAdd', onclick: planAddSheet }, ic('plus'), isLead() ? t('planAdd') : t('planPropose')) : null,
-        isLead() && list.length ? h('button', { class: 'btn sm', type: 'button', id: 'bulkAssign', onclick: function () { assignSheet(list); } }, ic('people'), t('assignList')) : null,
-        isLead() ? h('button', { class: 'btn ghost sm', type: 'button', onclick: function () { copyList(list); } }, t('copy')) : null) : null));
+        isAdmin() && list.length ? h('button', { class: 'btn sm', type: 'button', id: 'bulkAssign', onclick: function () { assignSheet(list); } }, ic('people'), t('assignList')) : null,
+        isLead() ? h('button', { class: 'btn ghost sm', type: 'button', onclick: function () { copyList(list); } }, t('copy')) : null,
+        isLead() ? h('button', { class: 'btn ghost sm', type: 'button', id: 'exportList', onclick: function () { exportList(list); } }, t('exportCsv')) : null) : null));
     if (!list.length) { v.appendChild(h('div', { class: 'empty', text: t('none') })); return v; }
     list.sort(function (a, b) { return (a.from || '9') < (b.from || '9') ? -1 : (a.from || '9') > (b.from || '9') ? 1 : 0; });
     var pl = h('div', { class: 'plist' });
@@ -757,6 +765,24 @@
     var rows = list.map(function (p) { return [p.stage, p.kpi, p.name, p.term, p.week, p.from, p.to, p.assignee, p.count, p.actual, t(statusOf(p)), chosen(p) ? chosen(p).name : ''].map(clean).join('\t'); });
     var txt = [t('stage'), t('indicator'), t('program'), t('term'), t('week'), 'from', 'to', t('assignee'), t('target'), t('actual'), t('status'), t('responsible')].join('\t') + '\n' + rows.join('\n');
     if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(function () { toast(t('copied')); }, function () { toast('Copy failed', true); });
+  }
+
+  /** Saves text as a file on the person's device. */
+  function saveFile(name, text, type) {
+    var a = h('a', { download: name }), url = URL.createObjectURL(new Blob([text], { type: type }));
+    a.href = url; document.body.appendChild(a); a.click(); document.body.removeChild(a); setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+  }
+  /** One CSV cell. Text that a spreadsheet would run as a formula is made plain text first. */
+  function csvCell(x) {
+    var s = String(x == null ? '' : x).replace(/[\r\n]+/g, ' ');
+    if (typeof x !== 'number' && /^[=+\-@\t]/.test(s)) s = "'" + s;
+    return /[",]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  }
+  /** The list as a file Excel opens directly: one programme per row, with the mark Excel needs to read Arabic. */
+  function exportList(list) {
+    var head = [t('stage'), t('indicator'), t('program'), t('term'), t('week'), 'from', 'to', t('assignee'), t('target'), t('actual'), t('status'), t('responsible')];
+    var rows = list.map(function (p) { return [p.stage, p.kpi, p.name, p.term, p.week, p.from, p.to, p.assignee, p.count, p.actual, t(statusOf(p)), chosen(p) ? chosen(p).name : '']; });
+    saveFile('programmes-' + (S.today || '') + '.csv', String.fromCharCode(0xFEFF) + [head].concat(rows).map(function (r) { return r.map(csvCell).join(','); }).join('\r\n'), 'text/csv;charset=utf-8');
   }
 
   /* ---------- side sheet ---------- */
@@ -797,12 +823,12 @@
   function openSheet(key, tab) {
     var p = S.programs.filter(function (x) { return x.key === key; })[0];
     if (!p) return;
-    tab = tab || (isLead() ? 'edit' : 'report');
+    tab = tab || (leads(p) ? 'edit' : 'report');
     var act = h('section', { class: 'box', id: 'actBox' });
     function paintAct() {
       clear(act);
-      if (isLead()) act.appendChild(tabsRow([['edit', t('edit')], ['report', t('report')]], tab, function (k) { tab = k; paintAct(); }));
-      if (tab === 'edit' && isLead()) { act.appendChild(h('p', { class: 'note' + (S.settings.writeBack ? '' : ' warn'), text: S.settings.writeBack ? t('editLead') : t('wbOff') })); act.appendChild(editForm(p)); }
+      if (leads(p)) act.appendChild(tabsRow([['edit', t('edit')], ['report', t('report')]], tab, function (k) { tab = k; paintAct(); }));
+      if (tab === 'edit' && leads(p)) { act.appendChild(h('p', { class: 'note' + (S.settings.writeBack ? '' : ' warn'), text: S.settings.writeBack ? t('editLead') : t('wbOff') })); act.appendChild(editForm(p)); }
       else { act.appendChild(h('h3', { text: t('report') })); act.appendChild(h('p', { class: 'note', text: t('reportLead') })); act.appendChild(reportForm({ type: 'report', programKey: p.key })); }
     }
     paintAct();
@@ -822,7 +848,7 @@
   }
 
   /* ---------- the plan: adding and removing programmes, while the main branch allows it ---------- */
-  function canPlan() { return isLead() ? !!S.settings.writeBack : !!S.settings.planEdit; }
+  function canPlan() { return isFollower() ? false : isLead() ? !!S.settings.writeBack : !!S.settings.planEdit; }
   /** After a plan request: a teacher's waits for review; an admin's has already been carried out and brings the plan back fresh. */
   function planDone(res, label, payload) {
     var r = JSON.parse(res), ref = { id: r.submission.id };
@@ -933,7 +959,7 @@
   function personSelect(id, people, current) {
     var s = h('select', { id: id });
     s.appendChild(h('option', { value: '', text: t('pickPerson') }));
-    people.slice().sort(function (a, b) { return a.name < b.name ? -1 : 1; }).forEach(function (u) {
+    people.filter(function (u) { return u.role !== 'follower'; }).sort(function (a, b) { return a.name < b.name ? -1 : 1; }).forEach(function (u) {
       var o = h('option', { value: u.email, text: u.name + ' · ' + t('r_' + u.role) });
       if (u.email === current) o.selected = true;
       s.appendChild(o);
@@ -942,12 +968,12 @@
   }
   /** In a programme's sheet: who answers for it in the platform. Admins choose; staff only read. */
   function whoBox(p) {
-    if (!isLead() && !chosen(p)) return null;
+    if (!isAdmin() && !chosen(p)) return null;
     var box = h('section', { class: 'box', id: 'whoBox' });
     function paint() {
       clear(box).appendChild(h('h3', { text: t('responsible') }));
       var a = chosen(p);
-      if (!isLead()) { box.appendChild(h('p', null, h('b', { text: a.name }), ' · ' + t('chosenBy'))); return; }
+      if (!isAdmin()) { box.appendChild(h('p', null, h('b', { text: a.name }), ' · ' + t('chosenBy'))); return; }
       if (!S.users) {
         box.appendChild(h('div', { class: 'spin' }));
         call('api_users').then(function (r) { S.users = JSON.parse(r); paint(); }, function (e) { toast(errText(e), true); });
@@ -1096,6 +1122,7 @@
   }
 
   function reportForm(base) {
+    if (isFollower()) return h('p', { class: 'note', id: 'followerNote', text: t('followerNote') });
     var name = 'o' + Math.random().toString(36).slice(2, 7), radios = h('div', { class: 'radios', role: 'radiogroup', 'aria-label': t('outcome') });
     [['done', t('oDone')], ['partial', t('oPartial')], ['postponed', t('oPostponed')]].forEach(function (o, i) { radios.appendChild(h('label', null, h('input', { type: 'radio', name: name, value: o[0], checked: i === 0 }), o[1])); });
     var title = h('input', { type: 'text', maxlength: '160', required: true }), stg = h('select'), kp = h('select');
@@ -1160,7 +1187,7 @@
     return c;
   }
   function vReview() {
-    var v = h('div', { class: 'view' }), subs = S.submissions.filter(function (s) { return stageOk(s.stage); });
+    var v = h('div', { class: 'view' }), subs = S.submissions.filter(function (s) { return stageOk(s.stage) && leads(s); });
     var pend = subs.filter(function (s) { return s.status === 'pending'; }), dec = subs.filter(function (s) { return s.status !== 'pending'; }).reverse().slice(0, 60);
     v.appendChild(h('p', { class: 'lead', text: t('reviewLead') }));
     v.appendChild(tabsRow([['pending', t('pending') + ' (' + pend.length + ')'], ['decided', t('decided') + ' (' + dec.length + ')']], S.reviewTab, function (k) { S.reviewTab = k; paintMain(); }));
@@ -1182,6 +1209,72 @@
     else { var l = h('div', { class: 'plist' }); mp.forEach(function (p) { l.appendChild(prow(p, true)); }); sec2.appendChild(l); }
     v.appendChild(sec2);
     v.appendChild(h('section', { class: 'panel' }, h('h2', { text: t('addWork') }), h('p', { class: 'note', text: t('addWorkLead') }), reportForm({ type: 'contribution' })));
+    return v;
+  }
+
+  /* ---------- professional development ---------- */
+  function vGrowth() {
+    var v = h('div', { class: 'view' }), kinds = ['evaluation', 'plan', 'course', 'licence', 'other'], states = ['todo', 'doing', 'done'];
+    v.appendChild(h('p', { class: 'lead', text: t('growthLead') }));
+    if (!S.dev) { v.appendChild(h('div', { class: 'spin' })); call('api_devList').then(function (r) { S.dev = JSON.parse(r); paintMain(); }, function (e) { toast(errText(e), true); }); return v; }
+    var d = S.dev, admin = !!d.admin, canMove = !isFollower(), counts = { todo: 0, doing: 0, done: 0 };
+    function pick(list, prefix, value) {
+      var s = h('select');
+      list.forEach(function (k) { var o = h('option', { value: k, text: t(prefix + k) }); if (k === value) o.selected = true; s.appendChild(o); });
+      return s;
+    }
+    function stateCell(it) {
+      if (!canMove) return h('span', { class: 'tag', text: t('ds_' + it.status) });
+      var s = pick(states, 'ds_', it.status);
+      s.setAttribute('aria-label', t('status'));
+      s.onchange = function () {
+        s.disabled = true;
+        call('api_setDevStatus', it.id, s.value).then(function (r) { it.status = JSON.parse(r).status; paintMain(); }, function (e) { s.disabled = false; s.value = it.status; toast(errText(e), true); });
+      };
+      return s;
+    }
+    d.items.forEach(function (it) { if (counts[it.status] !== undefined) counts[it.status]++; });
+    v.appendChild(h('p', { class: 'note', id: 'devCounts', text: states.map(function (k) { return t('ds_' + k) + ' ' + counts[k]; }).join(' · ') }));
+    if (!d.items.length) v.appendChild(h('div', { class: 'empty', text: t(admin ? 'devEmptyAdmin' : 'devEmpty') }));
+    else {
+      var tb = h('tbody');
+      d.items.slice().sort(function (a, b) { return (a.due || '9') < (b.due || '9') ? -1 : 1; }).forEach(function (it) {
+        var tr = h('tr');
+        if (admin) tr.appendChild(h('td', { text: it.name }));
+        tr.appendChild(h('td', { text: t('dk_' + it.kind) }));
+        var cell = h('td'); cell.appendChild(h('b', { text: it.title })); if (it.note) cell.appendChild(h('small', { text: ' · ' + it.note }));
+        tr.appendChild(cell);
+        tr.appendChild(h('td', { class: 'num', text: it.due || '—' }));
+        var st = h('td'); st.appendChild(stateCell(it)); tr.appendChild(st);
+        if (admin) {
+          var del = h('button', { class: 'btn ghost sm', type: 'button', text: t('del') }), dc = h('td');
+          del.onclick = function () { busy(del, true); call('api_deleteDev', it.id).then(function () { d.items = d.items.filter(function (x) { return x.id !== it.id; }); paintMain(); }, function (e) { busy(del, false); toast(errText(e), true); }); };
+          dc.appendChild(del); tr.appendChild(dc);
+        }
+        tb.appendChild(tr);
+      });
+      var hr = h('tr');
+      (admin ? [t('person')] : []).concat([t('devKind'), t('devTitle'), t('devDue'), t('status')]).concat(admin ? [''] : []).forEach(function (x) { hr.appendChild(h('th', { text: x })); });
+      var thead = h('thead'), table = h('table', { id: 'devTable' }), wrap = h('div', { class: 'tw' });
+      thead.appendChild(hr); table.appendChild(thead); table.appendChild(tb); wrap.appendChild(table); v.appendChild(wrap);
+    }
+    if (admin) {
+      var who = h('select', { id: 'devWho' }), kind = pick(kinds, 'dk_', 'course'), title = h('input', { type: 'text', id: 'devTitleIn', maxlength: '160' }), due = h('input', { type: 'date', id: 'devDueIn' }), note = h('input', { type: 'text', id: 'devNoteIn', maxlength: '500' });
+      who.appendChild(h('option', { value: '', text: t('pickPerson') }));
+      (d.people || []).slice().sort(function (a, b) { return a.name < b.name ? -1 : 1; }).forEach(function (p) { who.appendChild(h('option', { value: p.email, text: p.name })); });
+      var add = h('button', { class: 'btn', type: 'button', id: 'devAdd', text: t('devAdd') }), panel = h('section', { class: 'panel', id: 'devForm' });
+      add.onclick = function () {
+        busy(add, true);
+        call('api_saveDev', JSON.stringify({ email: who.value, kind: kind.value, title: title.value, due: due.value, note: note.value }))
+          .then(function (r) { d.items.push(JSON.parse(r)); paintMain(); }, function (e) { busy(add, false); toast(errText(e), true); });
+      };
+      panel.appendChild(h('h2', { text: t('devAddTitle') }));
+      [[t('person'), who], [t('devKind'), kind], [t('devTitle'), title], [t('devDue'), due], [t('devNote'), note]].forEach(function (f) {
+        var fld = h('label', { class: 'fld' }); fld.appendChild(h('span', { text: f[0] })); fld.appendChild(f[1]); panel.appendChild(fld);
+      });
+      panel.appendChild(add);
+      v.appendChild(panel);
+    }
     return v;
   }
 
@@ -1291,6 +1384,7 @@
   /* ---------- people: monitor by teacher ---------- */
   function loadUsers(v) {
     if (S.users) return true;
+    if (!isAdmin()) { S.users = []; return true; }   // the staff list is for admins; the server refuses it to anyone else
     v.appendChild(h('div', { class: 'spin' }));
     call('api_users').then(function (r) { S.users = JSON.parse(r); paintMain(); }, function (e) { toast(errText(e), true); });
     return false;
@@ -1482,7 +1576,7 @@
     su.focus();
   }
   function vMyCal() {
-    var v = h('div', { class: 'view' }), lead = isLead(), tab = lead ? (S.calTab || 'tasks') : 'sessions';
+    var v = h('div', { class: 'view' }), lead = isAdmin(), tab = lead ? (S.calTab || 'tasks') : 'sessions';
     if (lead) v.appendChild(tabsRow([['tasks', t('tasks')], ['sessions', t('sessions')]], tab, function (k) { S.calTab = k; render(); }));
     if (!loadMyCal(v)) return v;
     if (tab === 'tasks') {
@@ -1657,7 +1751,7 @@
     var v = h('div', { class: 'view' });
     v.appendChild(h('p', { class: 'lead', text: t('ttLead') }));
     if (!loadTimetable(v)) return v;
-    var all = S.tt.lessons.filter(function (l) { return stageOk(l.stage); }), lead = isLead(), mineN = all.filter(function (l) { return l.mine; }).length;
+    var all = S.tt.lessons.filter(function (l) { return stageOk(l.stage); }), lead = isAdmin(), mineN = all.filter(function (l) { return l.mine; }).length;
     var mode = S.ttMode || (mineN ? 'mine' : 'class');
     if (mode === 'mine' && !mineN) mode = 'class';
     var manyStages = stagesShown().length > 1 && !S.f.stage, tabs = [['class', t('ttByClass')], ['teacher', t('ttByTeacher')]].concat(mineN ? [['mine', t('ttMine')]] : []);
@@ -1784,7 +1878,7 @@
     } else if (S.adminTab === 'settings') {
       var st = S.settings, mf = h('input', { type: 'url', dir: 'ltr', placeholder: 'https://docs.google.com/spreadsheets/d/…' });
       var t1 = h('input', { type: 'date', value: st.termStarts[1] || '' }), t2 = h('input', { type: 'date', value: st.termStarts[2] || '' });
-      var wb = h('input', { type: 'checkbox', checked: st.writeBack }), pe = h('input', { type: 'checkbox', id: 'planEdit', checked: st.planEdit }), hrs = h('select');
+      var wb = h('input', { type: 'checkbox', checked: st.writeBack }), pe = h('input', { type: 'checkbox', id: 'planEdit', checked: st.planEdit }), ne = h('input', { type: 'checkbox', id: 'needEvidence', checked: !!st.needEvidence }), ns = h('input', { type: 'checkbox', id: 'noSelfReview', checked: !!st.noSelfReview }), hrs = h('select');
       var wOn = h('input', { type: 'checkbox', id: 'weeklyOn', checked: st.weekly !== false }), wDay = h('select', { id: 'weeklyDay' });
       [0, 1, 2, 3, 4, 5, 6].forEach(function (n) { var o = h('option', { value: n, text: fmt({ weekday: 'long', timeZone: 'UTC' }, new Date(Date.UTC(2026, 10, 15 + n))) }); if (n === (st.weeklyDay || 0)) o.selected = true; wDay.appendChild(o); });
       var nOn = h('input', { type: 'checkbox', checked: st.notify !== false }), nTime = h('input', { type: 'time', id: 'notifyTime', value: st.notifyTime || '07:30', required: true });
@@ -1806,7 +1900,7 @@
       var sb = h('button', { class: 'btn', type: 'submit' }, t('saveSettings'));
       v.appendChild(h('form', { class: 'panel form', id: 'settingsForm', onsubmit: function (e) {
         e.preventDefault();
-        var d = { t1: t1.value, t2: t2.value, scope: Array.prototype.map.call(boxes.querySelectorAll('input:checked'), function (i) { return i.value; }), writeBack: wb.checked, planEdit: pe.checked, syncHours: +hrs.value,
+        var d = { t1: t1.value, t2: t2.value, scope: Array.prototype.map.call(boxes.querySelectorAll('input:checked'), function (i) { return i.value; }), writeBack: wb.checked, planEdit: pe.checked, needEvidence: ne.checked, noSelfReview: ns.checked, syncHours: +hrs.value,
           notify: nOn.checked, notifyTime: nTime.value, weekly: wOn.checked, weeklyDay: +wDay.value, siteUrl: site.value.trim(), slogan: slo.value.trim(), welcome: wel.value.trim() };
         if (mf.value.trim()) d.mainFile = mf.value.trim();
         d.links = Array.prototype.map.call(linkRows.children, function (r) { return r.read(); }).filter(function (l) { return l.name || l.url; });
@@ -1816,7 +1910,7 @@
       } },
         h('p', { class: 'note' + (st.mainFileSet ? '' : ' warn'), text: st.mainFileSet ? t('connected') + (S.fileName ? ': ' + S.fileName : '') : t('notConnected') }),
         field(t('mainFile'), mf, t('mainFileHint')), h('div', { class: 'row2' }, field(t('t1'), t1), field(t('t2'), t2), field(t('syncEvery'), hrs)),
-        h('div', { class: 'fld' }, h('span', { text: t('scope') }), boxes), h('label', { class: 'check' }, wb, t('wb')), h('label', { class: 'check' }, pe, t('planEditL')), h('p', { class: 'note', text: t('planEditHint') }),
+        h('div', { class: 'fld' }, h('span', { text: t('scope') }), boxes), h('label', { class: 'check' }, wb, t('wb')), h('label', { class: 'check' }, pe, t('planEditL')), h('p', { class: 'note', text: t('planEditHint') }), h('label', { class: 'check' }, ne, t('needEvidenceL')), h('label', { class: 'check' }, ns, t('noSelfReviewL')),
         h('h3', { text: t('startPage') }), field(t('sloganL'), slo), field(t('welcomeL'), wel),
         h('h3', { text: t('alerts') }), h('label', { class: 'check' }, nOn, t('notifyOn')),
         h('div', { class: 'row2' }, field(t('notifyTime'), nTime, t('notifyTimeHint')), field(t('siteUrl'), site)),
@@ -1827,6 +1921,11 @@
         h('div', { class: 'actions' }, sb)));
     } else {
       if (!S.audit) { v.appendChild(h('div', { class: 'spin' })); call('api_audit', 200).then(function (r) { S.audit = JSON.parse(r); paintMain(); }, function (e) { toast(errText(e), true); }); return v; }
+      if (S.me.role === 'owner') {
+        var bk = h('button', { class: 'btn ghost sm', type: 'button', id: 'backupBtn' }, t('backupBtn'));
+        bk.onclick = function () { busy(bk, true); call('api_backup').then(function (r) { busy(bk, false); saveFile('masar-backup-' + (S.today || '') + '.json', r, 'application/json'); toast(t('backupDone')); }, function (e) { busy(bk, false); toast(errText(e), true); }); };
+        v.appendChild(h('section', { class: 'box' }, h('p', { class: 'note', text: t('backupLead') }), bk));
+      }
       var ab = h('tbody');
       S.audit.forEach(function (a) { ab.appendChild(h('tr', null, h('td', { class: 'num', text: fmtTime(a.time) }), h('td', null, h('span', { class: 'ltr', text: a.email })), h('td', { text: a.action }), h('td', { text: a.target }), h('td', null, h('small', { text: String(a.details).slice(0, 160) })))); });
       v.appendChild(S.audit.length ? h('div', { class: 'tw' }, h('table', null, h('thead', null, h('tr', null, h('th', { text: t('time') }), h('th', { text: t('email') }), h('th', { text: t('action') }), h('th', { text: t('targetCol') }), h('th', { text: t('details') }))), ab)) : h('div', { class: 'empty', text: t('none') }));
@@ -1841,7 +1940,7 @@
     var po = h('input', { type: 'text', id: 'ufPosition', maxlength: '80', value: u.position || '' }), mj = h('input', { type: 'text', id: 'ufMajor', maxlength: '80', value: u.major || '' });
     var ph = h('input', { type: 'tel', dir: 'ltr', inputmode: 'numeric', value: u.phone || '', placeholder: '9665xxxxxxxx' }), ch = h('select');
     ['email', 'whatsapp', 'both', 'off'].forEach(function (c) { var o = h('option', { value: c, text: t('ch_' + c) }); if (c === (u.channel || 'email')) o.selected = true; ch.appendChild(o); });
-    ['teacher', 'vp', 'avp', 'principal'].concat(S.me.role === 'owner' || u.role === 'owner' ? ['owner'] : []).forEach(function (r) { var o = h('option', { value: r, text: t('r_' + r) }); if (r === u.role) o.selected = true; rl.appendChild(o); });
+    ['follower', 'teacher', 'indicator', 'supervisor', 'vp', 'avp', 'principal'].concat(S.me.role === 'owner' || u.role === 'owner' ? ['owner'] : []).forEach(function (r) { var o = h('option', { value: r, text: t('r_' + r) }); if (r === u.role) o.selected = true; rl.appendChild(o); });
     var boxes = h('div', { class: 'form' });
     boxes.appendChild(h('label', { class: 'check' }, h('input', { type: 'checkbox', value: '*', checked: u.stages.indexOf('*') !== -1 }), t('allStages')));
     S.settings.scope.forEach(function (s) { boxes.appendChild(h('label', { class: 'check' }, h('input', { type: 'checkbox', value: s, checked: u.stages.indexOf(s) !== -1 }), stageName(s))); });
