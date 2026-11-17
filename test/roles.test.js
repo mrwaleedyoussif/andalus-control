@@ -132,4 +132,83 @@ throws(() => as('named-teacher@school.test', () => G('api_review')(subB.id, 'app
 ok(JSON.parse(as('named-teacher@school.test', () => G('api_bootstrap')())).me.leads.length === 0, 'a teacher gets no indicators to lead');
 ok(JSON.parse(U(() => G('api_review')(subB.id, 'approved', ''))).submission.status === 'approved', 'a supervisor still reviews any indicator in their stage');
 
+// ---- Control rules the admins may switch on: evidence for a completed report, and no deciding one's own report ----
+const report = (who, key, extra) => JSON.parse(as(who, () => G('api_submit')(JSON.stringify(Object.assign({ type: 'report', programKey: key }, extra || {})))));
+const settingsNow = () => JSON.parse(G('api_bootstrap')()).settings;
+ok(settingsNow().needEvidence === false && settingsNow().noSelfReview === false, 'both rules are off until an admin switches them on');
+const bare = report('teacher@school.test', other11[2].key);
+ok(bare.status === 'pending', 'with the rule off, a completed report needs no evidence, as before');
+const ownOff = report('vp@school.test', mine19[2].key, { note: 'done by me' });
+ok(JSON.parse(V(() => G('api_review')(ownOff.id, 'approved', ''))).submission.status === 'approved', 'with the rule off, a leader may decide their own report, as before');
+throws(() => T(() => G('api_saveSettings')(JSON.stringify({ needEvidence: true }))), 'FORBIDDEN', 'only an admin switches the rules');
+G('api_saveSettings')(JSON.stringify({ needEvidence: true, noSelfReview: true }));
+ok(settingsNow().needEvidence === true && settingsNow().noSelfReview === true, 'the page is told both rules are on');
+throws(() => report('teacher@school.test', far19[0].key.replace(/./g, 'x')), 'GONE', 'an unknown programme is still refused first');
+throws(() => report('teacher@school.test', other11[0].key), 'INPUT', 'with the rule on, a completed report without evidence or a note is refused');
+ok(report('teacher@school.test', other11[0].key, { note: 'held on Sunday, 28 pupils' }).status === 'pending', 'a note is enough');
+ok(report('vp@school.test', mine19[0].key, { evidence: 'https://drive.google.com/file/d/abc/view' }).status === 'pending', 'an evidence link is enough');
+ok(report('teacher@school.test', inEPI[5].key, { outcome: 'postponed' }).status === 'pending', 'a postponed report needs neither');
+const ownOn = JSON.parse(V(() => G('api_bootstrap')())).submissions.filter(x => x.by === 'vp@school.test' && x.status === 'pending')[0];
+throws(() => V(() => G('api_review')(ownOn.id, 'approved', '')), 'FORBIDDEN', 'with the rule on, a leader cannot approve their own report');
+throws(() => V(() => G('api_review')(ownOn.id, 'returned', 'x')), 'FORBIDDEN', 'nor return it');
+ok(JSON.parse(U(() => G('api_review')(ownOn.id, 'approved', ''))).submission.status === 'approved', 'another leader of the stage approves it');
+G('api_saveSettings')(JSON.stringify({ needEvidence: false, noSelfReview: false }));
+ok(settingsNow().needEvidence === false && settingsNow().noSelfReview === false, 'an admin can switch both rules off again');
+
+// ---- Backup: the owner downloads everything the platform keeps ----
+[V, U, T, F].forEach((who, i) => throws(() => who(() => G('api_backup')()), 'FORBIDDEN', 'only the owner takes a backup (' + ['vice principal', 'supervisor', 'teacher', 'follower'][i] + ')'));
+const bk = JSON.parse(G('api_backup')());
+ok(bk.by === 'owner@school.test' && !!bk.madeAt, 'a backup says who made it and when');
+ok(bk.sheets.Users.length >= 8 && bk.sheets.Users[0].indexOf('email') !== -1, 'a backup holds the staff list with its header row');
+ok(bk.sheets.Submissions.length > 1 && bk.sheets.Assignments.length > 1 && bk.sheets.Audit.length > 1, 'a backup holds reports, assignments and the activity log');
+ok(!('Snapshot' in bk.sheets) && !('Photos' in bk.sheets), 'a backup leaves out the copy of the main file and the pictures');
+ok(JSON.parse(G('api_audit')(5)).some(a => a.action === 'backup'), 'taking a backup is written to the activity log');
+
+// ---- Professional development: admins follow the staff of their stages, everyone sees their own items ----
+save({ email: 'epn@school.test', name: 'EPN Teacher', role: 'teacher', stages: [EPN] });
+const dev = (who, fn, ...a) => { const r = as(who, () => G(fn)(...a)); return r ? JSON.parse(r) : r; };
+ok(dev('teacher@school.test', 'api_devList').admin === false && dev('teacher@school.test', 'api_devList').items.length === 0, 'a member of staff starts with no items and is not an admin of the section');
+const course = dev('vp@school.test', 'api_saveDev', JSON.stringify({ email: 'teacher@school.test', kind: 'course', title: 'Classroom management course', due: '2026-12-15', note: 'Online' }));
+ok(!!course.id && course.status === 'todo' && course.source === 'manual' && course.name === 'Teacher' && course.due === '2026-12-15', 'an admin adds an item for a member of staff in their stages');
+throws(() => dev('vp@school.test', 'api_saveDev', JSON.stringify({ email: 'epn@school.test', kind: 'course', title: 'X' })), 'INPUT', 'an admin cannot add an item for staff outside their stages');
+throws(() => dev('vp@school.test', 'api_saveDev', JSON.stringify({ email: 'teacher@school.test', kind: 'course', title: '  ' })), 'INPUT', 'an item needs a title');
+const epnItem = dev('owner@school.test', 'api_saveDev', JSON.stringify({ email: 'epn@school.test', kind: 'licence', title: 'Teaching licence renewal', status: 'doing' }));
+const folItem = dev('owner@school.test', 'api_saveDev', JSON.stringify({ email: 'follower@school.test', kind: 'other', title: 'Orientation' }));
+ok(epnItem.status === 'doing' && epnItem.kind === 'licence', 'the owner adds items for anyone');
+['teacher@school.test', 'supervisor@school.test', 'indicator@school.test', 'follower@school.test'].forEach(w =>
+  throws(() => dev(w, 'api_saveDev', JSON.stringify({ email: 'teacher@school.test', kind: 'course', title: 'Y' })), 'FORBIDDEN', 'only an admin adds items (' + w.split('@')[0] + ')'));
+const tl = dev('teacher@school.test', 'api_devList');
+ok(tl.items.length === 1 && tl.items[0].id === course.id && !('people' in tl), 'a member of staff sees their own items and nobody else\'s');
+ok(dev('supervisor@school.test', 'api_devList').admin === false, 'a supervisor is not an admin of the section');
+const vl = dev('vp@school.test', 'api_devList');
+ok(vl.admin === true && vl.items.some(x => x.id === course.id) && !vl.items.some(x => x.id === epnItem.id), 'an admin sees the items of the staff in their stages only');
+ok(vl.people.some(x => x.email === 'teacher@school.test') && !vl.people.some(x => x.email === 'epn@school.test'), 'an admin is offered the staff of their stages only');
+ok(dev('owner@school.test', 'api_devList').items.length === 3, 'the owner sees every item');
+ok(dev('teacher@school.test', 'api_setDevStatus', course.id, 'done').status === 'done', 'a member of staff marks their own item done');
+throws(() => dev('teacher@school.test', 'api_setDevStatus', epnItem.id, 'done'), 'FORBIDDEN', 'a member of staff cannot change another person\'s item');
+throws(() => dev('follower@school.test', 'api_setDevStatus', folItem.id, 'done'), 'FORBIDDEN', 'a view-only account cannot change even its own item');
+throws(() => dev('teacher@school.test', 'api_setDevStatus', course.id, 'finished'), 'INPUT', 'an unknown state is refused');
+throws(() => dev('vp@school.test', 'api_setDevStatus', epnItem.id, 'done'), 'FORBIDDEN', 'an admin cannot change an item outside their stages');
+ok(dev('vp@school.test', 'api_setDevStatus', course.id, 'doing').status === 'doing', 'an admin changes the state for staff in their stages');
+const renamed = dev('vp@school.test', 'api_saveDev', JSON.stringify({ id: course.id, email: 'teacher@school.test', kind: 'course', title: 'Classroom management course (level 2)', status: 'doing' }));
+ok(renamed.id === course.id && /level 2/.test(renamed.title) && dev('owner@school.test', 'api_devList').items.length === 3, 'saving with an id changes the item instead of adding one');
+throws(() => dev('vp@school.test', 'api_saveDev', JSON.stringify({ id: 'missing', email: 'teacher@school.test', kind: 'course', title: 'Z' })), 'GONE', 'changing an item that is not there is refused');
+throws(() => dev('vp@school.test', 'api_saveDev', JSON.stringify({ id: epnItem.id, email: 'teacher@school.test', kind: 'course', title: 'Z' })), 'FORBIDDEN', 'an admin cannot take over an item outside their stages');
+const imp = dev('vp@school.test', 'api_importDev', JSON.stringify({ rows: [
+  { email: 'teacher@school.test', kind: 'evaluation', title: '360 evaluation, round 1', due: '2026-12-01' },
+  { email: 'teacher@school.test', kind: 'course', title: 'Classroom management course (level 2)' },
+  { email: 'epn@school.test', kind: 'plan', title: 'Development plan' },
+  { email: 'teacher@school.test', kind: 'plan', title: '' },
+  null ] }));
+ok(imp.added === 1 && imp.skipped.length === 4 && imp.skipped.map(x => x.row).join(',') === '2,3,4,5', 'an import adds the good rows and reports each skipped row (got ' + JSON.stringify(imp) + ')');
+ok(dev('teacher@school.test', 'api_devList').items.some(x => x.source === 'import' && x.kind === 'evaluation'), 'an imported item reaches the member of staff');
+throws(() => dev('vp@school.test', 'api_importDev', JSON.stringify({ rows: [] })), 'INPUT', 'an empty import is refused');
+throws(() => dev('teacher@school.test', 'api_importDev', JSON.stringify({ rows: [{ email: 'teacher@school.test', title: 'A' }] })), 'FORBIDDEN', 'only an admin imports');
+throws(() => dev('vp@school.test', 'api_deleteDev', epnItem.id), 'FORBIDDEN', 'an admin cannot delete an item outside their stages');
+throws(() => dev('teacher@school.test', 'api_deleteDev', course.id), 'FORBIDDEN', 'a member of staff cannot delete an item');
+dev('owner@school.test', 'api_deleteDev', epnItem.id);
+ok(!dev('owner@school.test', 'api_devList').items.some(x => x.id === epnItem.id), 'the owner deletes an item');
+throws(() => dev('owner@school.test', 'api_deleteDev', epnItem.id), 'GONE', 'deleting twice is refused');
+ok(JSON.parse(G('api_backup')()).sheets.Development.length === 4, 'the backup includes the development items');
+
 console.log(`${pass} passed, ${failN} failed`); process.exit(failN ? 1 : 0);

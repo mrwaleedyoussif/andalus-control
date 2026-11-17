@@ -427,6 +427,22 @@ what changed. They are kept even while the weekly email is switched off. The fir
 Skip parts B and C. In step 5 choose "Anyone within" your school domain, and give staff the `/exec` link itself.
 The same interface opens inside Google, signed in by the school account, without a separate website or install.
 
+## Control rules, export, backup and professional development
+
+- **Two control rules**, both off until an admin switches them on under الإدارة > الإعدادات:
+  - *A “done” report needs evidence or a note.* A report marked done is refused without an evidence link or a note.
+  - *Nobody decides their own report.* The sender cannot approve or return it; another leader of the stage does.
+- **Download for Excel.** Leaders get it beside "Copy list" on the programmes page: the filtered list as a CSV file Excel opens directly.
+- **Backup.** The owner downloads one JSON file from the activity log tab: staff, reports, assignments, history, calendars, timetable,
+  planner, visits, development items and the activity log. The copy of the main file is left out (a sync rebuilds it), and so are pictures.
+- **التطور المهني (professional development).** A page for what each member of staff has to complete: the 360° evaluation, the development
+  plan, courses and licences. It is done on the company platform and followed here; nothing is sent to that platform.
+  - Admins add, change and delete items for the staff of their own stages, and change their state.
+  - Everyone sees their own items and moves them between not started, in progress and done. A follower only reads.
+  - `api_importDev` adds up to 500 items from a table at once (for instance an export of the company platform) and reports each row it
+    skips. The page does not offer the import yet; the server function is ready and tested.
+  - The sheet `Development` is created on first use, so no new setup run is needed.
+
 ## Tests
 
 `main.json` is a JSON export of the visible tabs of the main file. It holds school data, so it is not kept here.
@@ -441,11 +457,18 @@ AP_FIXTURE=/path/to/main.json node test/server.test.js
 
 The browser and website tests read small Excel and CSV files kept in `test/fixtures/`.
 
-The permission levels have their own test. It needs no school data: it reads a small invented main file,
+The permission levels, the control rules, the backup and the professional development section have their own test. It needs no school data: it reads a small invented main file,
 `test/fixtures/mini-main.json`.
 
 ```bash
 node test/roles.test.js
+```
+
+The professional development page and the list export have a browser test on the preview page:
+
+```bash
+AP_FIXTURE=test/fixtures/mini-main.json AP_PREVIEW_OUT=/path/to/preview.html node build.js
+node test/growth.ui.test.js /path/to/preview.html
 ```
 
 The schedule builder's engine has its own test and needs no file:

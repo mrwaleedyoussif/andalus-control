@@ -4,7 +4,7 @@
  * Every function a page can call starts with api_ and checks the caller first. Nothing trusts the page.
  * The website reaches these through doPost with a session; a page served by doGet reaches them through google.script.run.
  */
-var SH = { USERS: 'Users', SUBS: 'Submissions', AUDIT: 'Audit', SNAP: 'Snapshot', NOTES: 'Notifications', PHOTOS: 'Photos', TASKS: 'Tasks', SESSIONS: 'Sessions', ASSIGN: 'Assignments', HISTORY: 'History', TIMETABLE: 'Timetable', PLANNER: 'Planner', VISITS: 'Visits' };
+var SH = { USERS: 'Users', SUBS: 'Submissions', AUDIT: 'Audit', SNAP: 'Snapshot', NOTES: 'Notifications', PHOTOS: 'Photos', TASKS: 'Tasks', SESSIONS: 'Sessions', ASSIGN: 'Assignments', HISTORY: 'History', TIMETABLE: 'Timetable', PLANNER: 'Planner', VISITS: 'Visits', DEV: 'Development' };
 // A follower can see their stages but cannot report, propose, upload or be given a programme.
 // A supervisor leads their stages (reviews, edits execution data, adds to the plan, syncs) without being a system admin.
 // An indicator owner leads only the indicators the main file names them for (مسؤول المؤشر), inside their stages.
@@ -70,7 +70,8 @@ function route_(body) {
   if (fn === 'logout') { endSession_(String(body.session || '')); return ''; }
   var routes = {
     api_bootstrap: api_bootstrap, api_submit: api_submit, api_review: api_review, api_updateExecution: api_updateExecution, api_sync: api_sync,
-    api_undoExecution: api_undoExecution, api_users: api_users, api_saveUser: api_saveUser, api_saveSettings: api_saveSettings, api_audit: api_audit,
+    api_undoExecution: api_undoExecution, api_users: api_users, api_saveUser: api_saveUser, api_saveSettings: api_saveSettings, api_audit: api_audit, api_backup: api_backup,
+    api_devList: api_devList, api_saveDev: api_saveDev, api_deleteDev: api_deleteDev, api_setDevStatus: api_setDevStatus, api_importDev: api_importDev,
     api_notifications: api_notifications, api_sendMyNotification: api_sendMyNotification, api_savePhoto: api_savePhoto, api_withdraw: api_withdraw, api_reopen: api_reopen,
     api_assign: api_assign, api_undoAssign: api_undoAssign, api_uploadEvidence: api_uploadEvidence, api_weekly: api_weekly, api_sendMyWeekly: api_sendMyWeekly, api_planOptions: api_planOptions, api_planRequest: api_planRequest,
     api_timetable: api_timetable, api_saveLesson: api_saveLesson, api_deleteLesson: api_deleteLesson, api_importLessons: api_importLessons, api_undoImport: api_undoImport, api_clearClass: api_clearClass, api_savePeriods: api_savePeriods,
@@ -162,6 +163,7 @@ function setup() {
   ensureSheet_(ss, SH.TIMETABLE, LESSON_COLS);
   ensureSheet_(ss, SH.PLANNER, PLANNER_COLS);
   ensureSheet_(ss, SH.VISITS, VISIT_COLS);
+  ensureSheet_(ss, SH.DEV, DEV_COLS);
   var evidence = 'ready';
   try { evidenceRoot_(); } catch (e) { evidence = 'not ready'; }   // also makes Google ask for permission to keep evidence files
   var p = PropertiesService.getScriptProperties();
@@ -720,7 +722,7 @@ function linksFor_(u) {
 function publicSettings_() {
   return {
     termStarts: { 1: prop_('T1_START'), 2: prop_('T2_START') }, lastSync: prop_('LAST_SYNC'), lastSyncError: prop_('LAST_SYNC_ERROR'),
-    writeBack: prop_('WRITEBACK') === 'on', planEdit: prop_('PLAN_EDIT') === 'on', mainFileSet: !!prop_('MAIN_FILE_ID'), scope: scope_(), syncHours: +prop_('SYNC_HOURS') || 1, domain: prop_('DOMAIN'),
+    writeBack: prop_('WRITEBACK') === 'on', planEdit: prop_('PLAN_EDIT') === 'on', needEvidence: prop_('EVIDENCE_RULE') === 'on', noSelfReview: prop_('REVIEW_RULE') === 'on', mainFileSet: !!prop_('MAIN_FILE_ID'), scope: scope_(), syncHours: +prop_('SYNC_HOURS') || 1, domain: prop_('DOMAIN'),
     slogan: prop_('SLOGAN') || DEFAULT_SLOGAN, welcome: prop_('WELCOME'),
     weekly: prop_('WEEKLY') !== 'off', weeklyDay: weeklyDay_(), lastWeekly: prop_('WEEKLY_LAST'),
     notify: prop_('NOTIFY') !== 'off', notifyTime: notifyTime_().text, siteUrl: prop_('SITE_URL'), whatsappAuto: waReady_(), lastNotify: prop_('NOTIFY_LAST')
@@ -778,6 +780,7 @@ function api_submit(json) {
   needStage_(u, rec.stage);
   rec.outcome = ['done', 'partial', 'postponed'].indexOf(d.outcome) !== -1 ? d.outcome : 'done';
   rec.execDate = date_(d.execDate); rec.actual = number_(d.actual); rec.evidence = url_(d.evidence); rec.note = text_(d.note, 1000);
+  if (prop_('EVIDENCE_RULE') === 'on' && type === 'report' && rec.outcome === 'done' && !rec.evidence && !rec.note) throw fail_('INPUT', 'أرفق شاهداً أو اكتب ملاحظة عمّا نُفّذ قبل إرسال تقرير «تم التنفيذ».');
   var lock = LockService.getScriptLock();
   lock.waitLock(15000);
   try {
@@ -809,6 +812,7 @@ function api_review(id, decision, note) {
     var s = readTable_(SH.SUBS, SUB_COLS).filter(function (x) { return x.id === id; })[0];
     if (!s) throw fail_('GONE', 'التقرير غير موجود');
     needLeads_(u, s.stage, s.kpi);
+    if (prop_('REVIEW_RULE') === 'on' && String(s.by).toLowerCase() === u.email) throw fail_('FORBIDDEN', 'لا يبتّ المرسل في تقريره. يراجعه قائد آخر.');
     if (s.status !== 'pending') throw fail_('STATE', 'سبق البت في هذا التقرير');
     return decide_(s, decision, note, u);
   } finally { lock.releaseLock(); }
@@ -928,6 +932,9 @@ function api_saveSettings(json) {
   }
   if ('writeBack' in d) p.setProperty('WRITEBACK', d.writeBack ? 'on' : 'off');
   if ('planEdit' in d) p.setProperty('PLAN_EDIT', d.planEdit ? 'on' : 'off');
+  // Two control rules the admins may switch on. Both are off until they do, so nothing changes for a school that has not chosen them.
+  if ('needEvidence' in d) p.setProperty('EVIDENCE_RULE', d.needEvidence ? 'on' : 'off');
+  if ('noSelfReview' in d) p.setProperty('REVIEW_RULE', d.noSelfReview ? 'on' : 'off');
   if ('slogan' in d) p.setProperty('SLOGAN', text_(d.slogan, 160));
   if ('welcome' in d) p.setProperty('WELCOME', text_(d.welcome, 300));
   if ('notify' in d) p.setProperty('NOTIFY', d.notify ? 'on' : 'off');
@@ -959,6 +966,26 @@ function api_saveSettings(json) {
   if (d.syncHours && [1, 2, 4, 6, 12].indexOf(+d.syncHours) !== -1) { p.setProperty('SYNC_HOURS', String(+d.syncHours)); installTrigger_(+d.syncHours); }
   audit_(u, 'settings', fileName, { t1: d.t1, t2: d.t2, scope: d.scope, writeBack: d.writeBack, notify: d.notify, notifyTime: d.notifyTime, syncHours: d.syncHours, mainFileChanged: !!d.mainFile, links: 'links' in d ? (d.links || []).length : undefined });
   return JSON.stringify({ settings: publicSettings_(), fileName: fileName, links: linksFor_(u) });
+}
+
+/**
+ * Everything the platform itself keeps, as one JSON text the owner saves as a file: staff, reports, assignments, history,
+ * calendars, timetable, planner, visits and the activity log. The snapshot of the main file is left out (a sync rebuilds it),
+ * and so are pictures and sent-notification marks. Owner only: it holds every person's data.
+ */
+var BACKUP_SHEETS = ['USERS', 'SUBS', 'ASSIGN', 'HISTORY', 'TASKS', 'SESSIONS', 'TIMETABLE', 'PLANNER', 'VISITS', 'DEV', 'AUDIT'];
+function api_backup() {
+  var u = me_();
+  if (u.role !== 'owner') throw fail_('FORBIDDEN', 'النسخة الاحتياطية لمالك النظام فقط.');
+  rate_(u, 'backup', 6, 3600);
+  var ss = SpreadsheetApp.getActive(), out = { app: AP.APP_NAME, madeAt: nowIso_(), by: u.email, sheets: {} };
+  BACKUP_SHEETS.forEach(function (k) {
+    var sh = ss.getSheetByName(SH[k]);
+    if (!sh || sh.getLastRow() === 0) { out.sheets[SH[k]] = []; return; }
+    out.sheets[SH[k]] = sh.getRange(1, 1, sh.getLastRow(), Math.max(sh.getLastColumn(), 1)).getValues().map(function (row) { return row.map(cellOut_); });
+  });
+  audit_(u, 'backup', '', { rows: Object.keys(out.sheets).reduce(function (n, k) { return n + out.sheets[k].length; }, 0) });
+  return JSON.stringify(out);
 }
 
 function api_audit(limit) {
@@ -2507,3 +2534,121 @@ function relinkAssignments_(programs) {
 }
 
 if (typeof module !== 'undefined') module.exports = { SH: SH, SUB_COLS: SUB_COLS, USER_COLS: USER_COLS };
+
+/* ---------- professional development ---------- */
+// What each member of staff has to complete for their professional development: the 360° evaluation, the development plan,
+// courses and licences. The company's own platform stays the place where these are done; this is where the school follows them.
+// Items are typed in by an admin or brought in as a table (for instance an export of that platform). Nothing is sent to it.
+var DEV_COLS = ['id', 'email', 'name', 'kind', 'title', 'status', 'due', 'note', 'source', 'by', 'at'];
+var DEV_KINDS = ['evaluation', 'plan', 'course', 'licence', 'other'];
+var DEV_STATES = ['todo', 'doing', 'done'];
+/** The sheet is made on first use, so a platform installed before this section needs no new setup run. */
+function devSheet_() {
+  var ss = SpreadsheetApp.getActive();
+  if (!ss.getSheetByName(SH.DEV)) ensureSheet_(ss, SH.DEV, DEV_COLS);
+  return ss.getSheetByName(SH.DEV);
+}
+function devRows_() { devSheet_(); return readTable_(SH.DEV, DEV_COLS); }
+function devOut_(r) { return { id: r.id, email: String(r.email).toLowerCase(), name: r.name, kind: r.kind, title: r.title, status: r.status, due: r.due, note: r.note, source: r.source }; }
+/** The staff an admin follows: everyone who shares a stage with them. */
+function devScope_(u) {
+  var mine = stagesOf_(u), map = users_(), out = {};
+  Object.keys(map).forEach(function (k) { if (stagesOf_(map[k]).some(function (s) { return mine.indexOf(s) !== -1; })) out[k] = map[k]; });
+  return out;
+}
+/** An admin gets the items of the staff in their stages, and the list of those staff. Everyone else gets their own items. */
+function api_devList() {
+  var u = me_(), rows = devRows_();
+  if (!isAdmin_(u)) return JSON.stringify({ admin: false, items: rows.filter(function (r) { return String(r.email).toLowerCase() === u.email; }).map(devOut_) });
+  var scope = devScope_(u);
+  return JSON.stringify({
+    admin: true, items: rows.filter(function (r) { return !!scope[String(r.email).toLowerCase()]; }).map(devOut_),
+    people: Object.keys(scope).filter(function (k) { return scope[k].active; }).map(function (k) { return { email: k, name: scope[k].name }; })
+  });
+}
+function devRec_(d, scope) {
+  var email = String(d.email || '').toLowerCase().trim(), who = scope[email];
+  if (!who) throw fail_('INPUT', 'اختر موظفاً من مراحلك.');
+  var rec = { email: email, name: who.name, kind: DEV_KINDS.indexOf(d.kind) !== -1 ? d.kind : 'other', title: text_(d.title, 160),
+    status: DEV_STATES.indexOf(d.status) !== -1 ? d.status : 'todo', due: date_(d.due), note: text_(d.note, 500) };
+  if (!rec.title) throw fail_('INPUT', 'اكتب عنوان البند.');
+  return rec;
+}
+function devRow_(full) { return DEV_COLS.map(function (c) { return full[c]; }); }
+function api_saveDev(json) {
+  var u = me_();
+  needAdmin_(u);
+  rate_(u, 'dev', 200, 300);
+  var d = JSON.parse(json), scope = devScope_(u), rec = devRec_(d, scope), lock = LockService.getScriptLock();
+  lock.waitLock(15000);
+  try {
+    var id = String(d.id || ''), old = id ? devRows_().filter(function (r) { return r.id === id; })[0] : null;
+    if (id && !old) throw fail_('GONE', 'البند غير موجود.');
+    if (old && !scope[String(old.email).toLowerCase()]) throw fail_('FORBIDDEN', 'هذا البند خارج مراحلك.');
+    var full = { id: old ? old.id : Utilities.getUuid(), email: rec.email, name: rec.name, kind: rec.kind, title: rec.title, status: rec.status, due: rec.due, note: rec.note,
+      source: old ? old.source : 'manual', by: u.email, at: nowIso_() };
+    var sh = devSheet_();
+    if (old) sh.getRange(old._row, 1, 1, DEV_COLS.length).setValues([devRow_(full)]); else sh.appendRow(devRow_(full));
+    audit_(u, old ? 'dev-updated' : 'dev-added', full.title, { id: full.id, email: full.email });
+    return JSON.stringify(devOut_(full));
+  } finally { lock.releaseLock(); }
+}
+function api_deleteDev(id) {
+  var u = me_();
+  needAdmin_(u);
+  rate_(u, 'dev', 200, 300);
+  var lock = LockService.getScriptLock();
+  lock.waitLock(15000);
+  try {
+    var r = devRows_().filter(function (x) { return x.id === String(id); })[0];
+    if (!r) throw fail_('GONE', 'البند غير موجود.');
+    if (!devScope_(u)[String(r.email).toLowerCase()]) throw fail_('FORBIDDEN', 'هذا البند خارج مراحلك.');
+    devSheet_().deleteRow(r._row);
+    audit_(u, 'dev-deleted', r.title, { id: r.id, email: r.email });
+    return '';
+  } finally { lock.releaseLock(); }
+}
+/** A member of staff moves their own item along. An admin may do it for the staff in their stages. */
+function api_setDevStatus(id, status) {
+  var u = me_();
+  needWrite_(u);
+  rate_(u, 'dev', 200, 300);
+  if (DEV_STATES.indexOf(status) === -1) throw fail_('INPUT', 'حالة غير معروفة');
+  var lock = LockService.getScriptLock();
+  lock.waitLock(15000);
+  try {
+    var r = devRows_().filter(function (x) { return x.id === String(id); })[0];
+    if (!r) throw fail_('GONE', 'البند غير موجود.');
+    var email = String(r.email).toLowerCase();
+    if (email !== u.email && !(isAdmin_(u) && devScope_(u)[email])) throw fail_('FORBIDDEN', 'هذا البند ليس لك.');
+    var full = { id: r.id, email: email, name: r.name, kind: r.kind, title: r.title, status: status, due: r.due, note: r.note, source: r.source, by: u.email, at: nowIso_() };
+    devSheet_().getRange(r._row, 1, 1, DEV_COLS.length).setValues([devRow_(full)]);
+    audit_(u, 'dev-status', r.title, { id: r.id, status: status });
+    return JSON.stringify(devOut_(full));
+  } finally { lock.releaseLock(); }
+}
+/** Adds many items at once from a table. A row for someone outside the admin's stages, or one already there, is skipped and reported. */
+function api_importDev(json) {
+  var u = me_();
+  needAdmin_(u);
+  rate_(u, 'devimport', 10, 600);
+  var d = JSON.parse(json), list = Array.isArray(d.rows) ? d.rows : [];
+  if (!list.length || list.length > 500) throw fail_('INPUT', 'أضف من صف واحد إلى 500 صف.');
+  var scope = devScope_(u), added = 0, skipped = [], lock = LockService.getScriptLock();
+  lock.waitLock(20000);
+  try {
+    var sh = devSheet_(), have = {};
+    devRows_().forEach(function (r) { have[String(r.email).toLowerCase() + '|' + r.kind + '|' + r.title] = true; });
+    list.forEach(function (x, i) {
+      var rec;
+      try { rec = devRec_(x || {}, scope); } catch (e) { skipped.push({ row: i + 1, why: String(e.message).split('|')[1] || '' }); return; }
+      var k = rec.email + '|' + rec.kind + '|' + rec.title;
+      if (have[k]) { skipped.push({ row: i + 1, why: 'موجود من قبل' }); return; }
+      have[k] = true;
+      sh.appendRow(devRow_({ id: Utilities.getUuid(), email: rec.email, name: rec.name, kind: rec.kind, title: rec.title, status: rec.status, due: rec.due, note: rec.note, source: 'import', by: u.email, at: nowIso_() }));
+      added++;
+    });
+    audit_(u, 'dev-imported', '', { added: added, skipped: skipped.length });
+    return JSON.stringify({ added: added, skipped: skipped });
+  } finally { lock.releaseLock(); }
+}
