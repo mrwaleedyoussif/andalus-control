@@ -67,6 +67,7 @@ The Principal, the Academic Vice Principal and the Vice Principal are the system
 | Role | Sees | Can do |
 |---|---|---|
 | معلم Teacher | Programmes of their stages, their own reports and requests | Report execution of a programme, add work on an indicator. When the admins allow it: propose a new programme, and ask to remove a programme they are responsible for. |
+| متابع Follower | Programmes, indicators and progress of their stages | Nothing: a view-only account. It cannot report, propose, upload evidence or be given a programme, and the server refuses these even if the page is bypassed |
 | وكيل المدرسة Vice Principal (admin) | Everything in their stages | Approve or return reports and plan requests, add and remove programmes, edit execution data, assign responsible people, sync, data checks, users, settings, notifications, activity log |
 | وكيل الشؤون التعليمية Academic Vice Principal (admin) | Everything in their stages | Same as Vice Principal |
 | مدير المدرسة Principal (admin) | Everything in their stages | Same, plus the stage principal's comment |
@@ -437,6 +438,13 @@ AP_FIXTURE=/path/to/main.json node test/server.test.js
 ```
 
 The browser and website tests read small Excel and CSV files kept in `test/fixtures/`.
+
+The permission levels have their own test. It needs no school data: it reads a small invented main file,
+`test/fixtures/mini-main.json`.
+
+```bash
+node test/roles.test.js
+```
 
 The schedule builder's engine has its own test and needs no file:
 

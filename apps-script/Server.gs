@@ -5,9 +5,12 @@
  * The website reaches these through doPost with a session; a page served by doGet reaches them through google.script.run.
  */
 var SH = { USERS: 'Users', SUBS: 'Submissions', AUDIT: 'Audit', SNAP: 'Snapshot', NOTES: 'Notifications', PHOTOS: 'Photos', TASKS: 'Tasks', SESSIONS: 'Sessions', ASSIGN: 'Assignments', HISTORY: 'History', TIMETABLE: 'Timetable', PLANNER: 'Planner', VISITS: 'Visits' };
-var ROLES = ['owner', 'principal', 'avp', 'vp', 'teacher'];
+// A follower can see their stages but cannot report, propose, upload or be given a programme.
+var ROLES = ['owner', 'principal', 'avp', 'vp', 'teacher', 'follower'];
 // The Principal, the Academic Vice Principal and the Vice Principal are the system admins. The owner is the technical owner.
 var LEADERS = ['owner', 'principal', 'avp', 'vp'];
+// System admins are named apart from stage leaders, so a level that leads a stage without running the system can be added to LEADERS alone.
+var ADMINS = ['owner', 'principal', 'avp', 'vp'];
 var USER_COLS = ['email', 'name', 'role', 'stages', 'active', 'aliases', 'phone', 'channel', 'major', 'position'];
 var CHANNELS = ['email', 'whatsapp', 'both', 'off'];
 var NOTE_COLS = ['date', 'time', 'email', 'name', 'channel', 'items', 'status'];
@@ -304,7 +307,10 @@ function me_() {
 function isLeader_(u) { return LEADERS.indexOf(u.role) !== -1; }
 function needLeader_(u) { if (!isLeader_(u)) throw fail_('FORBIDDEN', 'هذا الإجراء لقيادة المرحلة فقط.'); }
 /** System admins: the Principal, the Academic Vice Principal, the Vice Principal, and the technical owner. */
-function needAdmin_(u) { if (!isLeader_(u)) throw fail_('FORBIDDEN', 'هذا الإجراء لمديري النظام فقط.'); }
+function isAdmin_(u) { return ADMINS.indexOf(u.role) !== -1; }
+function needAdmin_(u) { if (!isAdmin_(u)) throw fail_('FORBIDDEN', 'هذا الإجراء لمديري النظام فقط.'); }
+/** Refuses every change from a view-only account. */
+function needWrite_(u) { if (u.role === 'follower') throw fail_('FORBIDDEN', 'حسابك للمتابعة فقط، ولا يملك صلاحية الإضافة أو التعديل.'); }
 
 function scope_() {
   try { var s = JSON.parse(prop_('STAGES') || '[]'); return s.length ? s : DEFAULT_STAGES; } catch (e) { return DEFAULT_STAGES; }
@@ -735,6 +741,7 @@ function api_bootstrap() {
 /** A member of staff reports work on a programme, or adds work on an indicator. It waits for a leader's review. */
 function api_submit(json) {
   var u = me_();
+  needWrite_(u);
   rate_(u, 'submit', 30, 300);
   var d = JSON.parse(json), type = d.type === 'contribution' ? 'contribution' : 'report';
   var rec = { type: type, programKey: '', sheet: '', stage: '', kpi: '', title: '' };
@@ -1003,6 +1010,7 @@ function decide_(s, decision, note, u) {
 /** Undo for a report its sender has just sent: only while it is still waiting for review. */
 function api_withdraw(id) {
   var u = me_();
+  needWrite_(u);
   rate_(u, 'submit', 30, 300);
   var lock = LockService.getScriptLock();
   lock.waitLock(15000);
@@ -1318,6 +1326,7 @@ function api_planOptions(stage, kpi) {
  */
 function api_planRequest(json) {
   var u = me_(), lead = isLeader_(u);
+  needWrite_(u);
   if (!lead && prop_('PLAN_EDIT') !== 'on') throw fail_('FORBIDDEN', 'إضافة البرامج وحذفها غير متاحة للمعلمين حالياً. يفعّلها مديرو النظام من الإعدادات.');
   rate_(u, 'plan', 40, 300);
   var d = JSON.parse(json), rec;
@@ -2302,6 +2311,7 @@ function driveUpload_(name, mime, bytes, folder) {
  */
 function api_uploadEvidence(json) {
   var u = me_();
+  needWrite_(u);
   rate_(u, 'upload', 12, 600);
   var d = JSON.parse(json), mime = String(d.mime || ''), data = String(d.data || ''), stage, kpi, title;
   if (d.programKey) {
@@ -2380,6 +2390,7 @@ function setAssignments_(u, pairs) {
     if (!x.email) return;
     var who = users[x.email];
     if (!who || !who.active) throw fail_('INPUT', 'المستخدم غير موجود أو موقوف.');
+    if (who.role === 'follower') throw fail_('INPUT', 'حساب المتابعة للعرض فقط، ولا تُسند إليه البرامج.');
     if (stagesOf_(who).indexOf(p.stage) === -1) throw fail_('INPUT', 'هذا المستخدم ليس من منسوبي مرحلة البرنامج: ' + p.stage);
   });
   var cur = {}, order = [], before = [];
