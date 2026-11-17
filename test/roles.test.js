@@ -164,4 +164,51 @@ ok(bk.sheets.Submissions.length > 1 && bk.sheets.Assignments.length > 1 && bk.sh
 ok(!('Snapshot' in bk.sheets) && !('Photos' in bk.sheets), 'a backup leaves out the copy of the main file and the pictures');
 ok(JSON.parse(G('api_audit')(5)).some(a => a.action === 'backup'), 'taking a backup is written to the activity log');
 
+// ---- Professional development: admins follow the staff of their stages, everyone sees their own items ----
+save({ email: 'epn@school.test', name: 'EPN Teacher', role: 'teacher', stages: [EPN] });
+const dev = (who, fn, ...a) => { const r = as(who, () => G(fn)(...a)); return r ? JSON.parse(r) : r; };
+ok(dev('teacher@school.test', 'api_devList').admin === false && dev('teacher@school.test', 'api_devList').items.length === 0, 'a member of staff starts with no items and is not an admin of the section');
+const course = dev('vp@school.test', 'api_saveDev', JSON.stringify({ email: 'teacher@school.test', kind: 'course', title: 'Classroom management course', due: '2026-12-15', note: 'Online' }));
+ok(!!course.id && course.status === 'todo' && course.source === 'manual' && course.name === 'Teacher' && course.due === '2026-12-15', 'an admin adds an item for a member of staff in their stages');
+throws(() => dev('vp@school.test', 'api_saveDev', JSON.stringify({ email: 'epn@school.test', kind: 'course', title: 'X' })), 'INPUT', 'an admin cannot add an item for staff outside their stages');
+throws(() => dev('vp@school.test', 'api_saveDev', JSON.stringify({ email: 'teacher@school.test', kind: 'course', title: '  ' })), 'INPUT', 'an item needs a title');
+const epnItem = dev('owner@school.test', 'api_saveDev', JSON.stringify({ email: 'epn@school.test', kind: 'licence', title: 'Teaching licence renewal', status: 'doing' }));
+const folItem = dev('owner@school.test', 'api_saveDev', JSON.stringify({ email: 'follower@school.test', kind: 'other', title: 'Orientation' }));
+ok(epnItem.status === 'doing' && epnItem.kind === 'licence', 'the owner adds items for anyone');
+['teacher@school.test', 'supervisor@school.test', 'indicator@school.test', 'follower@school.test'].forEach(w =>
+  throws(() => dev(w, 'api_saveDev', JSON.stringify({ email: 'teacher@school.test', kind: 'course', title: 'Y' })), 'FORBIDDEN', 'only an admin adds items (' + w.split('@')[0] + ')'));
+const tl = dev('teacher@school.test', 'api_devList');
+ok(tl.items.length === 1 && tl.items[0].id === course.id && !('people' in tl), 'a member of staff sees their own items and nobody else\'s');
+ok(dev('supervisor@school.test', 'api_devList').admin === false, 'a supervisor is not an admin of the section');
+const vl = dev('vp@school.test', 'api_devList');
+ok(vl.admin === true && vl.items.some(x => x.id === course.id) && !vl.items.some(x => x.id === epnItem.id), 'an admin sees the items of the staff in their stages only');
+ok(vl.people.some(x => x.email === 'teacher@school.test') && !vl.people.some(x => x.email === 'epn@school.test'), 'an admin is offered the staff of their stages only');
+ok(dev('owner@school.test', 'api_devList').items.length === 3, 'the owner sees every item');
+ok(dev('teacher@school.test', 'api_setDevStatus', course.id, 'done').status === 'done', 'a member of staff marks their own item done');
+throws(() => dev('teacher@school.test', 'api_setDevStatus', epnItem.id, 'done'), 'FORBIDDEN', 'a member of staff cannot change another person\'s item');
+throws(() => dev('follower@school.test', 'api_setDevStatus', folItem.id, 'done'), 'FORBIDDEN', 'a view-only account cannot change even its own item');
+throws(() => dev('teacher@school.test', 'api_setDevStatus', course.id, 'finished'), 'INPUT', 'an unknown state is refused');
+throws(() => dev('vp@school.test', 'api_setDevStatus', epnItem.id, 'done'), 'FORBIDDEN', 'an admin cannot change an item outside their stages');
+ok(dev('vp@school.test', 'api_setDevStatus', course.id, 'doing').status === 'doing', 'an admin changes the state for staff in their stages');
+const renamed = dev('vp@school.test', 'api_saveDev', JSON.stringify({ id: course.id, email: 'teacher@school.test', kind: 'course', title: 'Classroom management course (level 2)', status: 'doing' }));
+ok(renamed.id === course.id && /level 2/.test(renamed.title) && dev('owner@school.test', 'api_devList').items.length === 3, 'saving with an id changes the item instead of adding one');
+throws(() => dev('vp@school.test', 'api_saveDev', JSON.stringify({ id: 'missing', email: 'teacher@school.test', kind: 'course', title: 'Z' })), 'GONE', 'changing an item that is not there is refused');
+throws(() => dev('vp@school.test', 'api_saveDev', JSON.stringify({ id: epnItem.id, email: 'teacher@school.test', kind: 'course', title: 'Z' })), 'FORBIDDEN', 'an admin cannot take over an item outside their stages');
+const imp = dev('vp@school.test', 'api_importDev', JSON.stringify({ rows: [
+  { email: 'teacher@school.test', kind: 'evaluation', title: '360 evaluation, round 1', due: '2026-12-01' },
+  { email: 'teacher@school.test', kind: 'course', title: 'Classroom management course (level 2)' },
+  { email: 'epn@school.test', kind: 'plan', title: 'Development plan' },
+  { email: 'teacher@school.test', kind: 'plan', title: '' },
+  null ] }));
+ok(imp.added === 1 && imp.skipped.length === 4 && imp.skipped.map(x => x.row).join(',') === '2,3,4,5', 'an import adds the good rows and reports each skipped row (got ' + JSON.stringify(imp) + ')');
+ok(dev('teacher@school.test', 'api_devList').items.some(x => x.source === 'import' && x.kind === 'evaluation'), 'an imported item reaches the member of staff');
+throws(() => dev('vp@school.test', 'api_importDev', JSON.stringify({ rows: [] })), 'INPUT', 'an empty import is refused');
+throws(() => dev('teacher@school.test', 'api_importDev', JSON.stringify({ rows: [{ email: 'teacher@school.test', title: 'A' }] })), 'FORBIDDEN', 'only an admin imports');
+throws(() => dev('vp@school.test', 'api_deleteDev', epnItem.id), 'FORBIDDEN', 'an admin cannot delete an item outside their stages');
+throws(() => dev('teacher@school.test', 'api_deleteDev', course.id), 'FORBIDDEN', 'a member of staff cannot delete an item');
+dev('owner@school.test', 'api_deleteDev', epnItem.id);
+ok(!dev('owner@school.test', 'api_devList').items.some(x => x.id === epnItem.id), 'the owner deletes an item');
+throws(() => dev('owner@school.test', 'api_deleteDev', epnItem.id), 'GONE', 'deleting twice is refused');
+ok(JSON.parse(G('api_backup')()).sheets.Development.length === 4, 'the backup includes the development items');
+
 console.log(`${pass} passed, ${failN} failed`); process.exit(failN ? 1 : 0);

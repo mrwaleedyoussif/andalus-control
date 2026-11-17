@@ -94,7 +94,7 @@ const fs = require('fs');
   console.log('tiles:', tiles);
   check(tiles[0].startsWith('400 '), 'choosing the international school limits everything to its two stages');
   check((await p.$eval('#schoolPick', e => e.value)) === 'intl' && (await count(p, '#stagePick option')) === 3, 'school and stage pickers follow the choice');
-  check((await count(p, '.navlist button')) === 14, 'an admin sees fourteen menu items');
+  check((await count(p, '.navlist button')) === 15, 'an admin sees fifteen menu items');
   const idp = await p.$eval('.navlist a.navlink', a => [a.getAttribute('href'), a.target, a.rel, a.textContent].join('|'));
   check((await count(p, '.navlist a.navlink')) === 1 && idp === 'https://andalus-idp.online/|_blank|noopener noreferrer|منصة التطور المهني' && (await count(p, '#homeLinks a[data-link]')) === 1,
     'admins get a button to the professional development platform, in the menu and on the home page; it opens in a new tab');
@@ -890,7 +890,7 @@ const fs = require('fs');
   await p.selectOption('#viewAs', { label: 'معلم (معاينة)' });
   await p.waitForSelector('.tile');
   await p.waitForTimeout(400);
-  check((await count(p, '.navlist button')) === 7, 'a teacher sees seven menu items');
+  check((await count(p, '.navlist button')) === 8, 'a teacher sees eight menu items');
   check((await p.$$eval('a[data-link]', els => els.map(a => a.getAttribute('href')))).every(u => u === 'https://school.edupage.org/') && (await count(p, '.navlist a.navlink')) === 1 && (await count(p, '#homeLinks a[data-link]')) === 1 && !(await p.$eval('#app', e => e.textContent)).includes('التطور المهني'),
     "a teacher sees the button meant for everyone, and nothing of the admins' one");
   check((await count(p, '.navlist [data-view="people"], .navlist [data-view="weekly"], .navlist [data-view="review"], .navlist [data-view="admin"]')) === 0, 'no monitoring, weekly report, review or admin pages for a teacher');
