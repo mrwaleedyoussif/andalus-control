@@ -6,9 +6,10 @@
  */
 var SH = { USERS: 'Users', SUBS: 'Submissions', AUDIT: 'Audit', SNAP: 'Snapshot', NOTES: 'Notifications', PHOTOS: 'Photos', TASKS: 'Tasks', SESSIONS: 'Sessions', ASSIGN: 'Assignments', HISTORY: 'History', TIMETABLE: 'Timetable', PLANNER: 'Planner', VISITS: 'Visits' };
 // A follower can see their stages but cannot report, propose, upload or be given a programme.
-var ROLES = ['owner', 'principal', 'avp', 'vp', 'teacher', 'follower'];
+// A supervisor leads their stages (reviews, edits execution data, adds to the plan, syncs) without being a system admin.
+var ROLES = ['owner', 'principal', 'avp', 'vp', 'supervisor', 'teacher', 'follower'];
 // The Principal, the Academic Vice Principal and the Vice Principal are the system admins. The owner is the technical owner.
-var LEADERS = ['owner', 'principal', 'avp', 'vp'];
+var LEADERS = ['owner', 'principal', 'avp', 'vp', 'supervisor'];
 // System admins are named apart from stage leaders, so a level that leads a stage without running the system can be added to LEADERS alone.
 var ADMINS = ['owner', 'principal', 'avp', 'vp'];
 var USER_COLS = ['email', 'name', 'role', 'stages', 'active', 'aliases', 'phone', 'channel', 'major', 'position'];
@@ -557,7 +558,7 @@ function withTasks_(recs) {
     .forEach(function (t) { if (t.notify) (byOwner[t.owner] = byOwner[t.owner] || []).push(t); });
   Object.keys(byOwner).forEach(function (email) {
     var u = map[email];
-    if (!u || !u.active || u.channel === 'off' || !isLeader_(u)) return;
+    if (!u || !u.active || u.channel === 'off' || !isAdmin_(u)) return;
     var due = AP.tasksOn(byOwner[email], today);
     if (!due.length) return;
     var rec = recs.filter(function (r) { return r.email === email; })[0];
@@ -690,7 +691,7 @@ function links_() {
 }
 /** The buttons this person gets. A teacher never receives a link meant for the admins. */
 function linksFor_(u) {
-  var lead = isLeader_(u);
+  var lead = isAdmin_(u);
   return links_().filter(function (l) { return lead || l.who === 'all'; }).map(function (l) { return lead ? { name: l.name, url: l.url, who: l.who === 'all' ? 'all' : 'admins' } : { name: l.name, url: l.url }; });
 }
 
@@ -1089,7 +1090,7 @@ function sessionOut_(r) { return { id: r.id, weekday: +r.weekday, start: String(
 function api_myCalendar() {
   var u = me_();
   return JSON.stringify({
-    tasks: isLeader_(u) ? ownRows_(SH.TASKS, TASK_COLS, u.email).map(taskOut_) : [],
+    tasks: isAdmin_(u) ? ownRows_(SH.TASKS, TASK_COLS, u.email).map(taskOut_) : [],
     sessions: ownRows_(SH.SESSIONS, SESSION_COLS, u.email).map(sessionOut_)
   });
 }
@@ -1972,7 +1973,7 @@ function visitSheet_() { var ss = SpreadsheetApp.getActive(); return ss.getSheet
 
 /** Admins: the forms and every visit in their stages. A teacher: their own visits that were shared with them. */
 function api_visits() {
-  var u = me_(), lead = isLeader_(u), rows = readTable_(SH.VISITS, VISIT_COLS);
+  var u = me_(), lead = isAdmin_(u), rows = readTable_(SH.VISITS, VISIT_COLS);
   if (!lead) return JSON.stringify({ lead: false, visits: rows.filter(function (r) { return String(r.teacher).toLowerCase() === u.email && String(r.shared) === '1'; }).map(function (r) { return visitOut_(r, u, false, false); }) });
   var stages = stagesOf_(u);
   return JSON.stringify({ lead: true, kind: VISIT_ROLE[u.role] || '', canEditForms: canEditVisitForms_(u), forms: visitForms_(),
@@ -1981,7 +1982,7 @@ function api_visits() {
 
 /** One visit in full: for an admin of its stage, or for its teacher once it is shared. */
 function api_visit(id) {
-  var u = me_(), lead = isLeader_(u), r = visitRow_(id);
+  var u = me_(), lead = isAdmin_(u), r = visitRow_(id);
   if (!r) throw fail_('GONE', 'الزيارة غير موجودة');
   if (lead) needStage_(u, String(r.stage));
   else if (String(r.teacher).toLowerCase() !== u.email || String(r.shared) !== '1') throw fail_('FORBIDDEN', 'هذه الزيارة ليست لك.');

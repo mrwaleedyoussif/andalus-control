@@ -67,6 +67,7 @@ The Principal, the Academic Vice Principal and the Vice Principal are the system
 | Role | Sees | Can do |
 |---|---|---|
 | معلم Teacher | Programmes of their stages, their own reports and requests | Report execution of a programme, add work on an indicator. When the admins allow it: propose a new programme, and ask to remove a programme they are responsible for. |
+| مشرف مرحلة Stage supervisor | Everything in their stages except classroom visits | Approve or return reports and plan requests, add and remove programmes, edit execution data, refresh from the main file. Not a system admin: no users, settings, alerts, data check, weekly report, assignment of responsible people, timetable building or visits |
 | متابع Follower | Programmes, indicators and progress of their stages | Nothing: a view-only account. It cannot report, propose, upload evidence or be given a programme, and the server refuses these even if the page is bypassed |
 | وكيل المدرسة Vice Principal (admin) | Everything in their stages | Approve or return reports and plan requests, add and remove programmes, edit execution data, assign responsible people, sync, data checks, users, settings, notifications, activity log |
 | وكيل الشؤون التعليمية Academic Vice Principal (admin) | Everything in their stages | Same as Vice Principal |

@@ -65,4 +65,35 @@ ok(Array.isArray(JSON.parse(V(() => G('api_users')()))), 'a vice principal is st
 throws(() => V(() => G('api_updateExecution')(inEPN[0].key, JSON.stringify({ done: true }))), 'FORBIDDEN', 'a leader is still limited to their own stages');
 ok(Array.isArray(JSON.parse(G('api_users')())), 'the owner is still an admin');
 
+// ---- Supervisor: leads their stages, is not a system admin ----
+save({ email: 'supervisor@school.test', name: 'Supervisor', role: 'supervisor', stages: [EPI] });
+const U = fn => as('supervisor@school.test', fn);
+const sb = U(() => JSON.parse(G('api_bootstrap')()));
+ok(sb.me.role === 'supervisor' && sb.programs.length === 3 && sb.programs.every(p => p.stage === EPI), 'a supervisor sees the programmes of their own stages only');
+ok(sb.submissions.some(x => x.by === 'teacher@school.test'), "a supervisor sees the reports waiting in their stages");
+const waitingId = sb.submissions.filter(x => x.status === 'pending')[0].id;
+ok(JSON.parse(U(() => G('api_review')(waitingId, 'approved', ''))).submission.status === 'approved', 'a supervisor approves a report in their stage');
+ok(!!JSON.parse(U(() => G('api_sync')())).me, 'a supervisor can refresh from the main file');
+ok(JSON.parse(U(() => G('api_planOptions')(EPI, 'C.Br 1.9'))).direct === true, 'a supervisor adds to the plan directly, like a leader');
+throws(() => U(() => G('api_planOptions')(EPN, 'C.Br 1.9')), 'FORBIDDEN', 'a supervisor cannot plan in another stage');
+throws(() => U(() => G('api_updateExecution')(inEPN[0].key, JSON.stringify({ done: true }))), 'FORBIDDEN', 'a supervisor cannot edit execution data in another stage');
+let execErr = '';
+try { U(() => G('api_updateExecution')(inEPI[0].key, JSON.stringify({ done: true }))); } catch (e) { execErr = String(e.message); }
+ok(!execErr.startsWith('FORBIDDEN|'), 'a supervisor is allowed to edit execution data in their stage (got ' + execErr + ')');
+
+// What stays with the system admins
+[['api_users'], ['api_audit'], ['api_weekly'], ['api_notifications'], ['api_planner'],
+ ['api_saveSettings', JSON.stringify({ notifyTime: '07:00' })],
+ ['api_saveUser', JSON.stringify({ email: 'supervisor@school.test', name: 'S', role: 'principal', stages: ['*'] })],
+ ['api_assign', JSON.stringify({ email: 'teacher@school.test', keys: [inEPI[1].key] })],
+ ['api_saveTask', JSON.stringify({ title: 'x', date: '2026-11-20' })],
+ ['api_importUsers', JSON.stringify({ rows: [] })],
+ ['api_saveVisit', JSON.stringify({ stage: EPI })]
+].forEach(([fn, arg]) => throws(() => U(() => G(fn)(arg)), 'FORBIDDEN', 'a supervisor cannot call ' + fn));
+const sv = JSON.parse(U(() => G('api_visits')()));
+ok(sv.lead === false && sv.visits.length === 0, "a supervisor does not see teachers' classroom visits");
+ok(JSON.parse(U(() => G('api_myCalendar')())).tasks.length === 0, 'admin tasks are not part of a supervisor\'s calendar');
+ok(sb.links.every(l => l.who === undefined), 'a supervisor gets no link meant for the admins');
+ok(JSON.parse(V(() => G('api_visits')())).lead === true, 'a vice principal still sees the visits of their stages');
+
 console.log(`${pass} passed, ${failN} failed`); process.exit(failN ? 1 : 0);

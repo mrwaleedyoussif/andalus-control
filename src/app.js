@@ -30,7 +30,7 @@
       mainFile: 'رابط ملف المنصة الشاملة', mainFileHint: 'الصق رابط Google Sheets للملف الرئيسي. يُحفظ المعرّف فقط.', connected: 'الملف مربوط', notConnected: 'لم يُربط ملف بعد',
       t1: 'بداية الفصل الأول', t2: 'بداية الفصل الثاني', scope: 'المراحل التي تغطيها المنصة', wb: 'السماح بالكتابة في المنصة الشاملة (بيانات التنفيذ فقط)', syncEvery: 'المزامنة كل', hours: 'ساعات',
       saveSettings: 'حفظ الإعدادات', settingsSaved: 'حُفظت الإعدادات.', time: 'الوقت', action: 'الإجراء', targetCol: 'الهدف', lastSync: 'آخر مزامنة', never: 'لم تتم', syncNow: 'مزامنة', syncing: 'جارٍ المزامنة…', synced: 'تمت المزامنة.',
-      r_owner: 'مالك النظام', r_principal: 'مدير المدرسة', r_avp: 'وكيل الشؤون التعليمية', r_vp: 'وكيل المدرسة', r_teacher: 'معلم', r_follower: 'متابع (عرض فقط)', followerNote: 'حسابك للمتابعة فقط: تطّلع على البرامج والتقدم دون رفع تقارير أو تعديل.',
+      r_owner: 'مالك النظام', r_principal: 'مدير المدرسة', r_avp: 'وكيل الشؤون التعليمية', r_vp: 'وكيل المدرسة', r_teacher: 'معلم', r_supervisor: 'مشرف مرحلة', r_follower: 'متابع (عرض فقط)', followerNote: 'حسابك للمتابعة فقط: تطّلع على البرامج والتقدم دون رفع تقارير أو تعديل.',
       setupNeeded: 'لم يُربط ملف المنصة الشاملة بعد. يضيف مالك النظام الرابط من الإدارة ثم الإعدادات.', denied: 'لا يمكن فتح المنصة', close: 'إغلاق', cancel: 'إلغاء', lang: 'English', theme: 'المظهر',
       signIn: 'تسجيل الدخول', signInLead: 'ادخل بحساب Google الخاص بالمدرسة. لا توجد كلمات مرور.', signOut: 'خروج', signedOut: 'انتهت الجلسة. سجّل الدخول من جديد.', sar: 'ر.س', days: 'يوم',
       alerts: 'التنبيهات', school: 'المدرسة', allSchools: 'كل المدارس', sPrivate: 'مدارس الأندلس الأهلية', sIntl: 'مدارس الأندلس العالمية', sPrivateSub: 'Alandalus Private Schools', sIntlSub: 'Andalus International Schools',
@@ -81,7 +81,7 @@
       mainFile: 'Link to the main file', mainFileHint: 'Paste the Google Sheets link of the main file. Only its ID is stored.', connected: 'File connected', notConnected: 'No file connected yet',
       t1: 'Term 1 starts', t2: 'Term 2 starts', scope: 'Stages the platform covers', wb: 'Allow writing to the main file (execution data only)', syncEvery: 'Sync every', hours: 'hours',
       saveSettings: 'Save settings', settingsSaved: 'Settings saved.', time: 'Time', action: 'Action', targetCol: 'Target', lastSync: 'Last sync', never: 'never', syncNow: 'Sync', syncing: 'Syncing…', synced: 'Sync complete.',
-      r_owner: 'System owner', r_principal: 'Principal', r_avp: 'Academic Vice Principal', r_vp: 'Vice Principal', r_teacher: 'Teacher', r_follower: 'Follower (view only)', followerNote: 'Your account is view-only: you can follow programmes and progress, but not report or edit.',
+      r_owner: 'System owner', r_principal: 'Principal', r_avp: 'Academic Vice Principal', r_vp: 'Vice Principal', r_teacher: 'Teacher', r_supervisor: 'Stage supervisor', r_follower: 'Follower (view only)', followerNote: 'Your account is view-only: you can follow programmes and progress, but not report or edit.',
       setupNeeded: 'The main file is not connected yet. The system owner adds its link under Admin, then Settings.', denied: 'The platform cannot be opened', close: 'Close', cancel: 'Cancel', lang: 'العربية', theme: 'Theme',
       signIn: 'Sign in', signInLead: 'Use your school Google account. There are no passwords.', signOut: 'Sign out', signedOut: 'Your session ended. Sign in again.', sar: 'SAR', days: 'd',
       alerts: 'Notifications', school: 'School', allSchools: 'All schools', sPrivate: 'Alandalus Private Schools', sIntl: 'Andalus International Schools',
@@ -117,7 +117,7 @@
     'D.Br 3.1': 'School evaluation', 'D.Br 4.1': 'Safety and security' };
   var ST = ['done', 'active', 'soon', 'overdue', 'upcoming', 'undated'];
   var RINGS = ['done', 'active', 'soon', 'overdue'];   // the monitor's rings, outer to inner
-  var LEAD = ['owner', 'principal', 'avp', 'vp'];
+  var LEAD = ['owner', 'principal', 'avp', 'vp', 'supervisor'], ADMIN = ['owner', 'principal', 'avp', 'vp'];
   var ICON = {
     home: 'M3 11l9-8 9 8M5 10v10h5v-6h4v6h5V10', programs: 'M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01', review: 'M4 13l2-8h12l2 8M4 13v6h16v-6M4 13h5l1 3h4l1-3h5',
     checks: 'M5 21V4M5 4h11l-2 4 2 4H5', mine: 'M20 21a8 8 0 10-16 0M12 11a4 4 0 100-8 4 4 0 000 8', admin: 'M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M14 4v4M8 10v4M16 16v4',
@@ -222,6 +222,8 @@
   function grade(pct) { return RULES.grade(pct); }
   function indicatorState(list) { return RULES.indicatorState(list, S.today); }
   function isLead() { return S.me && LEAD.indexOf(S.me.role) !== -1; }
+  /** System admins. A supervisor leads their stages without being one: no users, settings, alerts, assignment, timetable or visits. */
+  function isAdmin() { return !!S.me && ADMIN.indexOf(S.me.role) !== -1; }
   /** A view-only account: sees its stages, changes nothing. The server refuses its writes as well. */
   function isFollower() { return !!S.me && S.me.role === 'follower'; }
   /** A button to another platform. It opens in a new tab and tells that site nothing about this one. */
@@ -321,8 +323,8 @@
   var GROUPS = [['home', 'calendar', 'programs', 'people', 'weekly'], ['review', 'alerts', 'checks'], ['timetable', 'builder', 'visits', 'mycal', 'mine'], ['admin']];
   function navItems() {
     if (!S.me) return [];
-    var lead = isLead();
-    return ['home', 'calendar', 'programs'].concat(lead ? ['people', 'weekly', 'review', 'alerts', 'checks'] : []).concat(['timetable']).concat(lead ? ['builder'] : []).concat(['visits', 'mycal', 'mine']).concat(lead ? ['admin'] : []);
+    var lead = isLead(), admin = isAdmin();
+    return ['home', 'calendar', 'programs'].concat(admin ? ['people', 'weekly'] : []).concat(lead ? ['review'] : []).concat(admin ? ['alerts', 'checks'] : []).concat(['timetable']).concat(admin ? ['builder'] : []).concat(['visits', 'mycal', 'mine']).concat(admin ? ['admin'] : []);
   }
   function waiting() { return S.submissions.filter(function (s) { return s.status === 'pending' && (isLead() || String(s.by).toLowerCase() === S.me.email); }).length; }
   function navBtn(v) {
@@ -744,7 +746,7 @@
     }
     v.appendChild(h('div', { class: 'headrow' }, h('p', { class: 'lead', id: 'resultCount', text: list.length + ' ' + t('results') + (f.q ? ' · «' + f.q + '»' : '') }),
       canPlan() || isLead() ? h('div', { class: 'actions' }, canPlan() ? h('button', { class: 'btn sm', type: 'button', id: 'planAdd', onclick: planAddSheet }, ic('plus'), isLead() ? t('planAdd') : t('planPropose')) : null,
-        isLead() && list.length ? h('button', { class: 'btn sm', type: 'button', id: 'bulkAssign', onclick: function () { assignSheet(list); } }, ic('people'), t('assignList')) : null,
+        isAdmin() && list.length ? h('button', { class: 'btn sm', type: 'button', id: 'bulkAssign', onclick: function () { assignSheet(list); } }, ic('people'), t('assignList')) : null,
         isLead() ? h('button', { class: 'btn ghost sm', type: 'button', onclick: function () { copyList(list); } }, t('copy')) : null) : null));
     if (!list.length) { v.appendChild(h('div', { class: 'empty', text: t('none') })); return v; }
     list.sort(function (a, b) { return (a.from || '9') < (b.from || '9') ? -1 : (a.from || '9') > (b.from || '9') ? 1 : 0; });
@@ -944,12 +946,12 @@
   }
   /** In a programme's sheet: who answers for it in the platform. Admins choose; staff only read. */
   function whoBox(p) {
-    if (!isLead() && !chosen(p)) return null;
+    if (!isAdmin() && !chosen(p)) return null;
     var box = h('section', { class: 'box', id: 'whoBox' });
     function paint() {
       clear(box).appendChild(h('h3', { text: t('responsible') }));
       var a = chosen(p);
-      if (!isLead()) { box.appendChild(h('p', null, h('b', { text: a.name }), ' · ' + t('chosenBy'))); return; }
+      if (!isAdmin()) { box.appendChild(h('p', null, h('b', { text: a.name }), ' · ' + t('chosenBy'))); return; }
       if (!S.users) {
         box.appendChild(h('div', { class: 'spin' }));
         call('api_users').then(function (r) { S.users = JSON.parse(r); paint(); }, function (e) { toast(errText(e), true); });
@@ -1294,6 +1296,7 @@
   /* ---------- people: monitor by teacher ---------- */
   function loadUsers(v) {
     if (S.users) return true;
+    if (!isAdmin()) { S.users = []; return true; }   // the staff list is for admins; the server refuses it to anyone else
     v.appendChild(h('div', { class: 'spin' }));
     call('api_users').then(function (r) { S.users = JSON.parse(r); paintMain(); }, function (e) { toast(errText(e), true); });
     return false;
@@ -1485,7 +1488,7 @@
     su.focus();
   }
   function vMyCal() {
-    var v = h('div', { class: 'view' }), lead = isLead(), tab = lead ? (S.calTab || 'tasks') : 'sessions';
+    var v = h('div', { class: 'view' }), lead = isAdmin(), tab = lead ? (S.calTab || 'tasks') : 'sessions';
     if (lead) v.appendChild(tabsRow([['tasks', t('tasks')], ['sessions', t('sessions')]], tab, function (k) { S.calTab = k; render(); }));
     if (!loadMyCal(v)) return v;
     if (tab === 'tasks') {
@@ -1660,7 +1663,7 @@
     var v = h('div', { class: 'view' });
     v.appendChild(h('p', { class: 'lead', text: t('ttLead') }));
     if (!loadTimetable(v)) return v;
-    var all = S.tt.lessons.filter(function (l) { return stageOk(l.stage); }), lead = isLead(), mineN = all.filter(function (l) { return l.mine; }).length;
+    var all = S.tt.lessons.filter(function (l) { return stageOk(l.stage); }), lead = isAdmin(), mineN = all.filter(function (l) { return l.mine; }).length;
     var mode = S.ttMode || (mineN ? 'mine' : 'class');
     if (mode === 'mine' && !mineN) mode = 'class';
     var manyStages = stagesShown().length > 1 && !S.f.stage, tabs = [['class', t('ttByClass')], ['teacher', t('ttByTeacher')]].concat(mineN ? [['mine', t('ttMine')]] : []);
@@ -1844,7 +1847,7 @@
     var po = h('input', { type: 'text', id: 'ufPosition', maxlength: '80', value: u.position || '' }), mj = h('input', { type: 'text', id: 'ufMajor', maxlength: '80', value: u.major || '' });
     var ph = h('input', { type: 'tel', dir: 'ltr', inputmode: 'numeric', value: u.phone || '', placeholder: '9665xxxxxxxx' }), ch = h('select');
     ['email', 'whatsapp', 'both', 'off'].forEach(function (c) { var o = h('option', { value: c, text: t('ch_' + c) }); if (c === (u.channel || 'email')) o.selected = true; ch.appendChild(o); });
-    ['follower', 'teacher', 'vp', 'avp', 'principal'].concat(S.me.role === 'owner' || u.role === 'owner' ? ['owner'] : []).forEach(function (r) { var o = h('option', { value: r, text: t('r_' + r) }); if (r === u.role) o.selected = true; rl.appendChild(o); });
+    ['follower', 'teacher', 'supervisor', 'vp', 'avp', 'principal'].concat(S.me.role === 'owner' || u.role === 'owner' ? ['owner'] : []).forEach(function (r) { var o = h('option', { value: r, text: t('r_' + r) }); if (r === u.role) o.selected = true; rl.appendChild(o); });
     var boxes = h('div', { class: 'form' });
     boxes.appendChild(h('label', { class: 'check' }, h('input', { type: 'checkbox', value: '*', checked: u.stages.indexOf('*') !== -1 }), t('allStages')));
     S.settings.scope.forEach(function (s) { boxes.appendChild(h('label', { class: 'check' }, h('input', { type: 'checkbox', value: s, checked: u.stages.indexOf(s) !== -1 }), stageName(s))); });
