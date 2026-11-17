@@ -17,7 +17,7 @@ if (!global.__rolesChecks) {
 // ==== checks ====
 const boot = JSON.parse(G('api_sync')());
 const inEPI = boot.programs.filter(p => p.stage === EPI), inEPN = boot.programs.filter(p => p.stage === EPN);
-ok(boot.programs.length === 9 && inEPI.length === 3 && inEPN.length === 3, 'the sample file gives 3 programmes per stage, got ' + boot.programs.length);
+ok(boot.programs.length === 18 && inEPI.length === 6 && inEPN.length === 6, 'the sample file gives 6 programmes per stage, in two indicators, got ' + boot.programs.length);
 
 const save = u => G('api_saveUser')(JSON.stringify(u));
 save({ email: 'follower@school.test', name: 'Follower', role: 'follower', stages: [EPI] });
@@ -32,7 +32,7 @@ const refusedAsViewOnly = (fn, m) => { try { fn(); ok(false, m + ' (no error)');
 // What a follower sees
 const fb = F(() => JSON.parse(G('api_bootstrap')()));
 ok(fb.me.role === 'follower', 'a follower signs in as a follower');
-ok(fb.programs.length === 3 && fb.programs.every(p => p.stage === EPI), 'a follower sees the programmes of their own stages only');
+ok(fb.programs.length === 6 && fb.programs.every(p => p.stage === EPI), 'a follower sees the programmes of their own stages only');
 ok(fb.indicators.every(i => i.stage === EPI), 'a follower sees the indicators of their own stages only');
 
 // What a follower cannot change
@@ -69,7 +69,7 @@ ok(Array.isArray(JSON.parse(G('api_users')())), 'the owner is still an admin');
 save({ email: 'supervisor@school.test', name: 'Supervisor', role: 'supervisor', stages: [EPI] });
 const U = fn => as('supervisor@school.test', fn);
 const sb = U(() => JSON.parse(G('api_bootstrap')()));
-ok(sb.me.role === 'supervisor' && sb.programs.length === 3 && sb.programs.every(p => p.stage === EPI), 'a supervisor sees the programmes of their own stages only');
+ok(sb.me.role === 'supervisor' && sb.programs.length === 6 && sb.programs.every(p => p.stage === EPI), 'a supervisor sees the programmes of their own stages only');
 ok(sb.submissions.some(x => x.by === 'teacher@school.test'), "a supervisor sees the reports waiting in their stages");
 const waitingId = sb.submissions.filter(x => x.status === 'pending')[0].id;
 ok(JSON.parse(U(() => G('api_review')(waitingId, 'approved', ''))).submission.status === 'approved', 'a supervisor approves a report in their stage');
@@ -95,5 +95,41 @@ ok(sv.lead === false && sv.visits.length === 0, "a supervisor does not see teach
 ok(JSON.parse(U(() => G('api_myCalendar')())).tasks.length === 0, 'admin tasks are not part of a supervisor\'s calendar');
 ok(sb.links.every(l => l.who === undefined), 'a supervisor gets no link meant for the admins');
 ok(JSON.parse(V(() => G('api_visits')())).lead === true, 'a vice principal still sees the visits of their stages');
+
+// ---- Indicator owner: leads only the indicators the main file names them for, inside their stages ----
+// The sample file names "Sample Stage Owner" for C.Br 1.9 in every stage and "Other Stage Owner" for C.Br 1.1.
+save({ email: 'indicator@school.test', name: 'Indicator Owner', role: 'indicator', stages: [EPI, EPN], aliases: ['Sample Stage Owner'] });
+save({ email: 'nobody@school.test', name: 'Unnamed Owner', role: 'indicator', stages: [EPI] });
+const I = fn => as('indicator@school.test', fn), N = fn => as('nobody@school.test', fn);
+const mine19 = inEPI.filter(p => p.kpi === 'C.Br 1.9'), other11 = inEPI.filter(p => p.kpi === 'C.Br 1.1'), far19 = boot.programs.filter(p => p.stage === MBI && p.kpi === 'C.Br 1.9');
+G('api_assign')(JSON.stringify({ email: 'teacher@school.test', keys: [mine19[1].key, other11[1].key] }));
+const subA = JSON.parse(T(() => G('api_submit')(JSON.stringify({ type: 'report', programKey: mine19[1].key, done: true, note: 'done' }))));
+const subB = JSON.parse(T(() => G('api_submit')(JSON.stringify({ type: 'report', programKey: other11[1].key, done: true, note: 'done' }))));
+const ib = I(() => JSON.parse(G('api_bootstrap')()));
+ok(ib.me.role === 'indicator' && ib.me.leads.slice().sort().join(',') === ['C.Br 1.9|' + EPI, 'C.Br 1.9|' + EPN].sort().join(','), 'an indicator owner leads the indicators that name them, in their own stages only (got ' + ib.me.leads.join(',') + ')');
+ok(ib.programs.length === 12, 'an indicator owner still sees every programme of their stages');
+ok(ib.submissions.some(x => x.id === subA.id) && !ib.submissions.some(x => x.id === subB.id), "an indicator owner sees the reports of their own indicators, not of others");
+throws(() => I(() => G('api_review')(subB.id, 'approved', '')), 'FORBIDDEN', "an indicator owner cannot review another indicator's report");
+ok(JSON.parse(I(() => G('api_review')(subA.id, 'approved', ''))).submission.status === 'approved', 'an indicator owner approves a report of their own indicator');
+throws(() => I(() => G('api_updateExecution')(other11[0].key, JSON.stringify({ done: true }))), 'FORBIDDEN', 'an indicator owner cannot edit execution data of another indicator');
+throws(() => I(() => G('api_updateExecution')(far19[0].key, JSON.stringify({ done: true }))), 'FORBIDDEN', 'an indicator owner cannot edit their indicator in a stage they do not have');
+let ownExec = '';
+try { I(() => G('api_updateExecution')(mine19[0].key, JSON.stringify({ done: true }))); } catch (e) { ownExec = String(e.message); }
+ok(!ownExec.startsWith('FORBIDDEN|'), 'an indicator owner is allowed to edit execution data of their own indicator (got ' + ownExec + ')');
+throws(() => I(() => G('api_reopen')(subB.id)), 'FORBIDDEN', "an indicator owner cannot reopen another indicator's report");
+let ownReopen = '';
+try { I(() => G('api_reopen')(subA.id)); } catch (e) { ownReopen = String(e.message); }
+ok(!ownReopen.startsWith('FORBIDDEN|'), 'an indicator owner may reopen a report of their own indicator (got ' + ownReopen + ')');
+[['api_users'], ['api_sync'], ['api_audit'], ['api_weekly'], ['api_assign', JSON.stringify({ email: 'teacher@school.test', keys: [mine19[2].key] })]]
+  .forEach(([fn, arg]) => throws(() => I(() => G(fn)(arg)), 'FORBIDDEN', 'an indicator owner cannot call ' + fn));
+// The level alone gives nothing: the main file has to name the person
+ok(JSON.parse(N(() => G('api_bootstrap')())).me.leads.length === 0, 'an indicator owner the main file does not name leads nothing');
+throws(() => N(() => G('api_review')(subB.id, 'approved', '')), 'FORBIDDEN', 'an unnamed indicator owner cannot review');
+throws(() => N(() => G('api_updateExecution')(mine19[0].key, JSON.stringify({ done: true }))), 'FORBIDDEN', 'an unnamed indicator owner cannot edit execution data');
+// Being named is not enough either: a teacher with the same name in the file stays a teacher
+save({ email: 'named-teacher@school.test', name: 'Named Teacher', role: 'teacher', stages: [EPI], aliases: ['Other Stage Owner'] });
+throws(() => as('named-teacher@school.test', () => G('api_review')(subB.id, 'approved', '')), 'FORBIDDEN', 'a teacher named in the file as indicator owner still cannot review');
+ok(JSON.parse(as('named-teacher@school.test', () => G('api_bootstrap')())).me.leads.length === 0, 'a teacher gets no indicators to lead');
+ok(JSON.parse(U(() => G('api_review')(subB.id, 'approved', ''))).submission.status === 'approved', 'a supervisor still reviews any indicator in their stage');
 
 console.log(`${pass} passed, ${failN} failed`); process.exit(failN ? 1 : 0);

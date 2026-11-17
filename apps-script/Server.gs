@@ -7,7 +7,8 @@
 var SH = { USERS: 'Users', SUBS: 'Submissions', AUDIT: 'Audit', SNAP: 'Snapshot', NOTES: 'Notifications', PHOTOS: 'Photos', TASKS: 'Tasks', SESSIONS: 'Sessions', ASSIGN: 'Assignments', HISTORY: 'History', TIMETABLE: 'Timetable', PLANNER: 'Planner', VISITS: 'Visits' };
 // A follower can see their stages but cannot report, propose, upload or be given a programme.
 // A supervisor leads their stages (reviews, edits execution data, adds to the plan, syncs) without being a system admin.
-var ROLES = ['owner', 'principal', 'avp', 'vp', 'supervisor', 'teacher', 'follower'];
+// An indicator owner leads only the indicators the main file names them for (مسؤول المؤشر), inside their stages.
+var ROLES = ['owner', 'principal', 'avp', 'vp', 'supervisor', 'indicator', 'teacher', 'follower'];
 // The Principal, the Academic Vice Principal and the Vice Principal are the system admins. The owner is the technical owner.
 var LEADERS = ['owner', 'principal', 'avp', 'vp', 'supervisor'];
 // System admins are named apart from stage leaders, so a level that leads a stage without running the system can be added to LEADERS alone.
@@ -326,6 +327,25 @@ function stagesOf_(u) {
 
 function needStage_(u, stage) {
   if (stagesOf_(u).indexOf(stage) === -1) throw fail_('FORBIDDEN', 'هذه المرحلة خارج صلاحيتك.');
+}
+/** The indicators this person answers for, as "code|stage": those the main file names them for as مسؤول المؤشر, in their own stages. */
+function ownedIndicators_(u) {
+  var snap = readSnapshot_(), stages = stagesOf_(u), names = {}, out = [];
+  (snap.targets || []).forEach(function (t) { Object.keys(t.stages || {}).forEach(function (s) { if (t.stages[s].owner) names[t.code + '|' + s] = t.stages[s].owner; }); });
+  (snap.indicators || []).forEach(function (b) { if (b.owner) names[b.kpi + '|' + b.stage] = b.owner; });
+  Object.keys(names).forEach(function (k) { if (stages.indexOf(k.slice(k.indexOf('|') + 1)) !== -1 && AP.namedIn(names[k], [u]).length) out.push(k); });
+  return out;
+}
+/** Leaders, and indicator owners: the levels that may review and edit execution data somewhere. Where exactly is needLeads_. */
+function needMayLead_(u) { if (!isLeader_(u) && u.role !== 'indicator') throw fail_('FORBIDDEN', 'هذا الإجراء لقيادة المرحلة ومسؤولي المؤشرات فقط.'); }
+/** True for a leader in that stage, and for the indicator owner of that indicator in that stage. */
+function leadsIndicator_(u, stage, kpi) {
+  if (stagesOf_(u).indexOf(stage) === -1) return false;
+  return isLeader_(u) || (u.role === 'indicator' && ownedIndicators_(u).indexOf(kpi + '|' + stage) !== -1);
+}
+function needLeads_(u, stage, kpi) {
+  if (isLeader_(u)) return needStage_(u, stage);
+  if (!leadsIndicator_(u, stage, kpi)) throw fail_('FORBIDDEN', 'هذا المؤشر خارج صلاحيتك.');
 }
 
 /* ---------- snapshot of the main file ---------- */
@@ -708,9 +728,9 @@ function publicSettings_() {
 }
 
 function subsFor_(u) {
-  var stages = stagesOf_(u), lead = isLeader_(u);
+  var stages = stagesOf_(u), lead = isLeader_(u), own = u.role === 'indicator' ? ownedIndicators_(u) : [];
   return readTable_(SH.SUBS, SUB_COLS).filter(function (s) {
-    return lead ? stages.indexOf(s.stage) !== -1 : String(s.by).toLowerCase() === u.email;
+    return lead ? stages.indexOf(s.stage) !== -1 : String(s.by).toLowerCase() === u.email || own.indexOf(s.kpi + '|' + s.stage) !== -1;
   }).map(subOut_);
 }
 /** A report as the page receives it: without the server's own undo record, and with the number as a number. */
@@ -726,7 +746,7 @@ function api_bootstrap() {
   var u = me_(), stages = stagesOf_(u), snap = readSnapshot_();
   var inStage = function (x) { return stages.indexOf(x.stage) !== -1; };
   return JSON.stringify({
-    me: { email: u.email, name: u.name, role: u.role, stages: stages, aliases: u.aliases, photo: photos_()[u.email] || '' },
+    me: { email: u.email, name: u.name, role: u.role, stages: stages, aliases: u.aliases, photo: photos_()[u.email] || '', leads: u.role === 'indicator' ? ownedIndicators_(u) : [] },
     settings: publicSettings_(), today: today_(), fileName: snap.fileName || '',
     programs: snap.programs.filter(inStage), indicators: snap.indicators.filter(inStage),
     targets: snap.targets.map(function (t) {
@@ -780,7 +800,7 @@ function api_submit(json) {
 /** A leader approves or returns a report. Approval of a completed programme writes its execution fields to the main file. */
 function api_review(id, decision, note) {
   var u = me_();
-  needLeader_(u);
+  needMayLead_(u);
   rate_(u, 'review', 120, 300);
   if (['approved', 'returned'].indexOf(decision) === -1) throw fail_('INPUT', 'قرار غير معروف');
   var lock = LockService.getScriptLock();
@@ -788,7 +808,7 @@ function api_review(id, decision, note) {
   try {
     var s = readTable_(SH.SUBS, SUB_COLS).filter(function (x) { return x.id === id; })[0];
     if (!s) throw fail_('GONE', 'التقرير غير موجود');
-    needStage_(u, s.stage);
+    needLeads_(u, s.stage, s.kpi);
     if (s.status !== 'pending') throw fail_('STATE', 'سبق البت في هذا التقرير');
     return decide_(s, decision, note, u);
   } finally { lock.releaseLock(); }
@@ -797,7 +817,7 @@ function api_review(id, decision, note) {
 /** A leader edits execution fields directly. The stage principal's comment is for the principal and the owner. */
 function api_updateExecution(key, json) {
   var u = me_();
-  needLeader_(u);
+  needMayLead_(u);
   rate_(u, 'write', 120, 300);
   var d = JSON.parse(json), fields = {};
   ['done', 'actual', 'evidence'].forEach(function (k) { if (k in d) fields[k] = d[k]; });
@@ -807,7 +827,7 @@ function api_updateExecution(key, json) {
   }
   var p = readSnapshot_().programs.filter(function (x) { return x.key === key; })[0];
   if (!p) throw fail_('GONE', 'البرنامج غير موجود في آخر مزامنة.');
-  needStage_(u, p.stage);
+  needLeads_(u, p.stage, p.kpi);
   if (prop_('WRITEBACK') !== 'on') throw fail_('SETUP', 'الكتابة في المنصة الشاملة متوقفة. يفعّلها مالك النظام من الإعدادات.');
   var lock = LockService.getScriptLock();
   lock.waitLock(20000);
@@ -822,14 +842,14 @@ function api_updateExecution(key, json) {
 /** Undo for a leader's own edit: puts back what the cells held before it. Works for six hours and only once. */
 function api_undoExecution(undoId) {
   var u = me_();
-  needLeader_(u);
+  needMayLead_(u);
   rate_(u, 'write', 120, 300);
   var cache = CacheService.getScriptCache(), k = 'undo:' + String(undoId || '').replace(/[^\w-]/g, '').slice(0, 60), raw = cache.get(k), rec = null;
   try { rec = raw ? JSON.parse(raw) : null; } catch (e) { rec = null; }
   if (!rec || rec.by !== u.email) throw fail_('GONE', 'انتهت مهلة التراجع عن هذا التعديل.');
   var p = readSnapshot_().programs.filter(function (x) { return x.key === rec.key; })[0];
   if (!p) throw fail_('GONE', 'البرنامج غير موجود في آخر مزامنة.');
-  needStage_(u, p.stage);
+  needLeads_(u, p.stage, p.kpi);
   if (prop_('WRITEBACK') !== 'on') throw fail_('SETUP', 'الكتابة في المنصة الشاملة متوقفة. يفعّلها مالك النظام من الإعدادات.');
   var lock = LockService.getScriptLock();
   lock.waitLock(20000);
@@ -1028,14 +1048,14 @@ function api_withdraw(id) {
 /** Undo for a review decision: the report waits again, and anything the approval wrote to the main file is put back. */
 function api_reopen(id) {
   var u = me_();
-  needLeader_(u);
+  needMayLead_(u);
   rate_(u, 'review', 120, 300);
   var lock = LockService.getScriptLock();
   lock.waitLock(20000);
   try {
     var s = readTable_(SH.SUBS, SUB_COLS).filter(function (x) { return x.id === id; })[0];
     if (!s) throw fail_('GONE', 'التقرير غير موجود');
-    needStage_(u, s.stage);
+    needLeads_(u, s.stage, s.kpi);
     if (s.status === 'pending') throw fail_('STATE', 'التقرير بانتظار المراجعة أصلاً.');
     var program = null, plan = s.type === 'add' || s.type === 'remove', reverted = false;
     if (s.undo && plan) { planRevert_(s, u); reverted = true; }
